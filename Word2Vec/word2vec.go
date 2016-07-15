@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
+	"os"
 )
 
 func readVocabulary(vocabularyFile string) {
@@ -57,13 +59,15 @@ const tableSize = 1e8
 
 var vocabSize = 0
 
-var vocab []Term
+const vocabHashSize int = 30000000 // Maximum 30 * 0.7 = 21M words in the vocabulary
 
-func createUnigramTable(wordMap map[string]*Term) {
+var vocabHash [vocabHashSize]int
+
+func createUnigramTable(vocab []Term) [tableSize]int {
 
 	const power float64 = 0.75
 
-	var table [tableSize]int
+	var unigramTable [tableSize]int
 
 	var trainWordsPow float64
 	trainWordsPow = 0.0
@@ -77,7 +81,7 @@ func createUnigramTable(wordMap map[string]*Term) {
 	d1 := math.Pow(float64(vocab[i].frequency), power) / trainWordsPow
 
 	for a := 0; a < tableSize; a++ {
-		table[a] = i
+		unigramTable[a] = i
 		if float64(a)/float64(tableSize) > d1 {
 			i++
 			d1 += math.Pow(float64(vocab[i].frequency), power) / trainWordsPow
@@ -87,6 +91,88 @@ func createUnigramTable(wordMap map[string]*Term) {
 			i = vocabSize - 1
 		}
 	}
+
+	return unigramTable
+}
+
+func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
+
+	for a := 0; a < vocabHashSize; a++ {
+		vocabHash[a] = -1
+	}
+
+	file, err := os.Open(trainFileName)
+
+	if err != nil {
+		panic(err)
+	}
+
+	vocabSize = 0
+
+	addWordToVocab("</s>")
+
+	scanner := bufio.NewScanner(file)
+
+	// Set the Split method to ScanWords.
+	scanner.Split(bufio.ScanWords)
+
+	// Scan all words from the file.
+	for scanner.Scan() {
+		word := scanner.Text()
+		fmt.Println(word)
+
+		pos := searchVocab(word)
+		if pos == -1 {
+			pos = addWordToVocab(word)
+			vocab[pos].frequency = 1
+		} else {
+			vocab[pos].frequency++
+		}
+
+		if float32(vocabSize) > float32(vocabHashSize)*0.7 {
+			reduceVocab()
+		}
+	}
+
+	/*
+	   	char word[MAX_STRING];
+	     long long a, i;
+
+	     AddWordToVocab((char *)"</s>");
+	     while (1) {
+	       ReadWord(word, fin);
+	       if (feof(fin)) break;
+	       train_words++;
+	       if ((debug_mode > 1) && (train_words % 100000 == 0)) {
+	         printf("%lldK%c", train_words / 1000, 13);
+	         fflush(stdout);
+	       }
+	       i = SearchVocab(word);
+	       if (i == -1) {
+	         a = AddWordToVocab(word);
+	         vocab[a].cn = 1;
+	       } else vocab[i].cn++;
+	       if (vocab_size > vocab_hash_size * 0.7) ReduceVocab();
+	     }
+	     SortVocab();
+	     if (debug_mode > 0) {
+	       printf("Vocab size: %lld\n", vocab_size);
+	       printf("Words in train file: %lld\n", train_words);
+	     }
+	     file_size = ftell(fin);
+	     fclose(fin);
+	*/
+}
+
+func addWordToVocab(word string) int {
+	return -1
+}
+
+func searchVocab(word string) int {
+	return -1
+}
+
+func reduceVocab() {
 }
 
 func main() {
@@ -166,34 +252,3 @@ func main() {
 	fmt.Println("cbow:", *cbowMode)
 
 }
-
-/*
-printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
-printf("Options:\n");
-printf("Parameters for training:\n");
-
-
-
-
-
-
-
-
-
-
-
-
-
-printf("\nExamples:\n");
-printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
-return 0;
-}
-
-
-output_file[0] = 0;
-save_vocab_file[0] = 0;
-read_vocab_file[0] = 0;
-if (cbow) alpha = 0.05;
-
-
-*/
