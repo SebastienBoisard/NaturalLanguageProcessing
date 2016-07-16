@@ -44,6 +44,67 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 	learnVocabFromTrainFile("vocabulary.txt", vocab) {
 }*/
 
+func TestReduceVocab(t *testing.T) {
+
+	initializeVocabulary()
+
+	var position int
+
+	position = addWordToVocab("first")
+	vocab[position].frequency = 4
+
+	position = addWordToVocab("second")
+	vocab[position].frequency = 2
+
+	position = addWordToVocab("third")
+	vocab[position].frequency = 1
+
+	var expectedMinReduce int64
+	var expectedVocabSize int
+
+	// Remove words with frequence <= 1 (ie word "third") from the vocabulary
+
+	expectedMinReduce = 2
+	expectedVocabSize = 2
+	reduceVocab()
+
+	if expectedMinReduce != minReduce {
+		t.Error("Expected", expectedMinReduce, "got", minReduce)
+	}
+
+	if expectedVocabSize != vocabSize {
+		t.Error("Expected", expectedVocabSize, "got", vocabSize)
+	}
+
+	// Remove words with frequence <= 2 (ie word "second") from the vocabulary
+
+	expectedMinReduce = 3
+	expectedVocabSize = 1
+	reduceVocab()
+
+	if expectedMinReduce != minReduce {
+		t.Error("Expected", expectedMinReduce, "got", minReduce)
+	}
+
+	if expectedVocabSize != vocabSize {
+		t.Error("Expected", expectedVocabSize, "got", vocabSize)
+	}
+
+	// Remove words with frequence <= 3 (ie no word) from the vocabulary
+
+	expectedMinReduce = 4
+	expectedVocabSize = 1
+	reduceVocab()
+
+	if expectedMinReduce != minReduce {
+		t.Error("Expected", expectedMinReduce, "got", minReduce)
+	}
+
+	if expectedVocabSize != vocabSize {
+		t.Error("Expected", expectedVocabSize, "got", vocabSize)
+	}
+}
+
 func TestSearchVocab(t *testing.T) {
 	var actualPosition, expectedPosition int
 
@@ -56,21 +117,21 @@ func TestSearchVocab(t *testing.T) {
 	actualPosition = searchVocab("first")
 
 	if actualPosition != expectedPosition {
-		t.Error("Expected", actualPosition, "got", expectedPosition)
+		t.Error("Expected", expectedPosition, "got", actualPosition)
 	}
 
 	expectedPosition = 1
 	actualPosition = searchVocab("second")
 
 	if actualPosition != expectedPosition {
-		t.Error("Expected", actualPosition, "got", expectedPosition)
+		t.Error("Expected", expectedPosition, "got", actualPosition)
 	}
 
 	expectedPosition = -1
 	actualPosition = searchVocab("third")
 
 	if actualPosition != expectedPosition {
-		t.Error("Expected", actualPosition, "got", expectedPosition)
+		t.Error("Expected", expectedPosition, "got", actualPosition)
 	}
 }
 
@@ -83,14 +144,14 @@ func TestAddWordToVocab(t *testing.T) {
 	actualPosition = addWordToVocab("first")
 
 	if actualPosition != expectedPosition {
-		t.Error("Expected", actualPosition, "got", expectedPosition)
+		t.Error("Expected", expectedPosition, "got", actualPosition)
 	}
 
 	expectedPosition = 1
 	actualPosition = addWordToVocab("second")
 
 	if actualPosition != expectedPosition {
-		t.Error("Expected", actualPosition, "got", expectedPosition)
+		t.Error("Expected", expectedPosition, "got", actualPosition)
 	}
 }
 

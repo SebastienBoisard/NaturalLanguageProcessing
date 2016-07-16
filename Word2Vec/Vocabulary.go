@@ -66,7 +66,7 @@ func BuildVocabulary(data []byte) []string {
 const vocabHashSize int = 30000000 // Maximum 30 * 0.7 = 21M words in the vocabulary
 
 // vocabMaxSize can be changed
-var vocabMaxSize = 1000
+var vocabMaxSize = 10 //1000
 
 const maxString = 100
 
@@ -74,6 +74,8 @@ var vocab []Term
 var vocabHash []int
 
 var vocabSize int
+
+var minReduce int64
 
 func initializeVocabulary() {
 	vocab = make([]Term, vocabMaxSize)
@@ -84,6 +86,7 @@ func initializeVocabulary() {
 	}
 
 	vocabSize = 0
+	minReduce = 1
 }
 
 func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
@@ -126,6 +129,33 @@ func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
 	}
 }
 
+// reduceVocab reduces the vocabulary by removing infrequent words
+func reduceVocab() {
+
+	nbWordRemoved := 0
+	for a := 0; a < vocabSize; a++ {
+		if vocab[a].frequency <= minReduce {
+			vocab = append(vocab[:a], vocab[a+1:]...)
+			nbWordRemoved++
+		}
+	}
+
+	vocabSize = vocabSize - nbWordRemoved
+
+	for a := 0; a < vocabHashSize; a++ {
+		vocabHash[a] = -1
+	}
+	for a := 0; a < vocabSize; a++ {
+		// Hash will be re-computed, as it is not actual
+		hash := getWordHash(vocab[a].word)
+		for vocabHash[hash] != -1 {
+			hash = (hash + 1) % uint64(vocabHashSize)
+		}
+		vocabHash[hash] = a
+	}
+	minReduce++
+}
+
 // searchVocab returns position of a word in the vocabulary; if the word is not found, returns -1
 func searchVocab(word string) int {
 	hash := getWordHash(word)
@@ -141,6 +171,7 @@ func searchVocab(word string) int {
 }
 
 // addWordToVocab adds a word to the vocabulary
+// addWordToVocab returns the position of the new word in the vocabulary
 func addWordToVocab(word string) int {
 	wordLength := len(word) + 1
 
@@ -161,33 +192,6 @@ func addWordToVocab(word string) int {
 	vocabHash[hash] = vocabSize - 1
 
 	return vocabSize - 1
-}
-
-var minReduce int64 = 1
-
-// reduceVocab reduces the vocabulary by removing infrequent tokens
-func reduceVocab() {
-
-	for a := 0; a < vocabSize; a++ {
-		if vocab[a].frequency <= minReduce {
-			//append(vocab[:a], vocab[a+1:])
-		}
-	}
-
-	vocabSize = len(vocab)
-
-	for a := 0; a < vocabHashSize; a++ {
-		vocabHash[a] = -1
-	}
-	for a := 0; a < vocabSize; a++ {
-		// Hash will be re-computed, as it is not actual
-		hash := getWordHash(vocab[a].word)
-		for vocabHash[hash] != -1 {
-			hash = (hash + 1) % uint64(vocabHashSize)
-		}
-		vocabHash[hash] = a
-	}
-	minReduce++
 }
 
 // getWordHash returns hash value of a word
