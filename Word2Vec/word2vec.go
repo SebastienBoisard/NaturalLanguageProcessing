@@ -7,8 +7,6 @@ import (
 	"math"
 )
 
-const maxString = 100
-
 func readVocabulary(vocabularyFile string) {
 
 	data, err := ioutil.ReadFile(vocabularyFile)
@@ -56,8 +54,6 @@ func readVocabulary(vocabularyFile string) {
 }
 
 const tableSize = 1e8
-
-var vocabSize = 0
 
 func createUnigramTable(vocab []Term) [tableSize]int {
 

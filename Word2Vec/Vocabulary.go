@@ -68,12 +68,22 @@ const vocabHashSize int = 30000000 // Maximum 30 * 0.7 = 21M words in the vocabu
 // vocabMaxSize can be changed
 var vocabMaxSize = 1000
 
+const maxString = 100
+
 var vocab []Term
 var vocabHash []int
+
+var vocabSize int
 
 func initializeVocabulary() {
 	vocab = make([]Term, vocabMaxSize)
 	vocabHash = make([]int, vocabHashSize)
+
+	for a := 0; a < vocabHashSize; a++ {
+		vocabHash[a] = -1
+	}
+
+	vocabSize = 0
 }
 
 func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
@@ -132,7 +142,6 @@ func searchVocab(word string) int {
 
 // addWordToVocab adds a word to the vocabulary
 func addWordToVocab(word string) int {
-
 	wordLength := len(word) + 1
 
 	if wordLength > maxString {
@@ -152,16 +161,6 @@ func addWordToVocab(word string) int {
 	vocabHash[hash] = vocabSize - 1
 
 	return vocabSize - 1
-}
-
-// getWordHash returns hash value of a word
-func getWordHash(word string) uint64 {
-	var hash uint64
-	for a := 0; a < len(word); a++ {
-		hash = hash*257 + uint64(word[a])
-	}
-	hash = hash % uint64(vocabHashSize)
-	return hash
 }
 
 var minReduce int64 = 1
@@ -189,4 +188,18 @@ func reduceVocab() {
 		vocabHash[hash] = a
 	}
 	minReduce++
+}
+
+// getWordHash returns hash value of a word
+// To get the same results than the original version, the hash value must be
+// a uint64 type.
+func getWordHash(word string) uint64 {
+	var hash uint64
+	for a := 0; a < len(word); a++ {
+		hash = hash*257 + uint64(word[a])
+	}
+	// TODO: verify that it's useful to apply a modulo to a uint64
+	hash = hash % uint64(vocabHashSize)
+
+	return hash
 }

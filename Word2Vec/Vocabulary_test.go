@@ -44,6 +44,26 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 	learnVocabFromTrainFile("vocabulary.txt", vocab) {
 }*/
 
+func TestAddWordToVocab(t *testing.T) {
+	var actualPosition, expectedPosition int
+
+	initializeVocabulary()
+
+	expectedPosition = 0
+	actualPosition = addWordToVocab("first")
+
+	if actualPosition != expectedPosition {
+		t.Error("Expected", actualPosition, "got", expectedPosition)
+	}
+
+	expectedPosition = 1
+	actualPosition = addWordToVocab("second")
+
+	if actualPosition != expectedPosition {
+		t.Error("Expected", actualPosition, "got", expectedPosition)
+	}
+}
+
 func TestGetWordHash(t *testing.T) {
 	var actualHash, expectedHash uint64
 
@@ -51,34 +71,34 @@ func TestGetWordHash(t *testing.T) {
 	actualHash = getWordHash("hello")
 
 	if actualHash != expectedHash {
-		t.Error("Expected ", expectedHash, "got", actualHash)
+		t.Error("Expected", expectedHash, "got", actualHash)
 	}
 
 	expectedHash = 22177351
 	actualHash = getWordHash("production")
 
 	if actualHash != expectedHash {
-		t.Error("Expected ", expectedHash, "got", actualHash)
+		t.Error("Expected", expectedHash, "got", actualHash)
 	}
 
 	expectedHash = 26318739
 	actualHash = getWordHash("Antidisestablishmentarianism")
 
 	if actualHash != expectedHash {
-		t.Error("Expected ", expectedHash, "got", actualHash)
+		t.Error("Expected", expectedHash, "got", actualHash)
 	}
 
 	expectedHash = 3568563
 	actualHash = getWordHash("antidisestablishmentarianism")
 
 	if actualHash != expectedHash {
-		t.Error("Expected ", expectedHash, "got", actualHash)
+		t.Error("Expected", expectedHash, "got", actualHash)
 	}
 
 	expectedHash = 97
 	actualHash = getWordHash("a")
 
 	if actualHash != expectedHash {
-		t.Error("Expected ", expectedHash, "got", actualHash)
+		t.Error("Expected", expectedHash, "got", actualHash)
 	}
 }
