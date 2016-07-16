@@ -44,6 +44,36 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 	learnVocabFromTrainFile("vocabulary.txt", vocab) {
 }*/
 
+func TestSearchVocab(t *testing.T) {
+	var actualPosition, expectedPosition int
+
+	initializeVocabulary()
+
+	addWordToVocab("first")
+	addWordToVocab("second")
+
+	expectedPosition = 0
+	actualPosition = searchVocab("first")
+
+	if actualPosition != expectedPosition {
+		t.Error("Expected", actualPosition, "got", expectedPosition)
+	}
+
+	expectedPosition = 1
+	actualPosition = searchVocab("second")
+
+	if actualPosition != expectedPosition {
+		t.Error("Expected", actualPosition, "got", expectedPosition)
+	}
+
+	expectedPosition = -1
+	actualPosition = searchVocab("third")
+
+	if actualPosition != expectedPosition {
+		t.Error("Expected", actualPosition, "got", expectedPosition)
+	}
+}
+
 func TestAddWordToVocab(t *testing.T) {
 	var actualPosition, expectedPosition int
 
