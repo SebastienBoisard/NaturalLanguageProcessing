@@ -36,3 +36,49 @@ func testEq(a, b []string) bool {
 
 	return true
 }
+
+/*
+func TestLearnVocabFromTrainFile(t *testing.T) {
+	initializeVocabulary();
+
+	learnVocabFromTrainFile("vocabulary.txt", vocab) {
+}*/
+
+func TestGetWordHash(t *testing.T) {
+	var actualHash, expectedHash uint64
+
+	expectedHash = 18516756
+	actualHash = getWordHash("hello")
+
+	if actualHash != expectedHash {
+		t.Error("Expected ", expectedHash, "got", actualHash)
+	}
+
+	expectedHash = 22177351
+	actualHash = getWordHash("production")
+
+	if actualHash != expectedHash {
+		t.Error("Expected ", expectedHash, "got", actualHash)
+	}
+
+	expectedHash = 26318739
+	actualHash = getWordHash("Antidisestablishmentarianism")
+
+	if actualHash != expectedHash {
+		t.Error("Expected ", expectedHash, "got", actualHash)
+	}
+
+	expectedHash = 3568563
+	actualHash = getWordHash("antidisestablishmentarianism")
+
+	if actualHash != expectedHash {
+		t.Error("Expected ", expectedHash, "got", actualHash)
+	}
+
+	expectedHash = 97
+	actualHash = getWordHash("a")
+
+	if actualHash != expectedHash {
+		t.Error("Expected ", expectedHash, "got", actualHash)
+	}
+}
