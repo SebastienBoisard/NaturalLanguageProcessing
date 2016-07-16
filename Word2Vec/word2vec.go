@@ -3,55 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math"
 )
-
-func readVocabulary(vocabularyFile string) {
-
-	data, err := ioutil.ReadFile(vocabularyFile)
-
-	if err != nil {
-		fmt.Println("Vocabulary file not found")
-		panic(err)
-	}
-
-	w := BuildVocabulary(data)
-
-	fmt.Println(w)
-	/*
-	   long long a, i = 0;
-	   char c;
-	   char word[MAX_STRING];
-	   FILE *fin = fopen(read_vocab_file, "rb");
-	   if (fin == NULL) {
-	   printf("Vocabulary file not found\n");
-	   exit(1);
-	   }
-	   for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
-	   vocab_size = 0;
-	   while (1) {
-	   ReadWord(word, fin);
-	   if (feof(fin)) break;
-	   a = AddWordToVocab(word);
-	   fscanf(fin, "%lld%c", &vocab[a].cn, &c);
-	   i++;
-	   }
-	   SortVocab();
-	   if (debug_mode > 0) {
-	   printf("Vocab size: %lld\n", vocab_size);
-	   printf("Words in train file: %lld\n", train_words);
-	   }
-	   fin = fopen(train_file, "rb");
-	   if (fin == NULL) {
-	   printf("ERROR: training data file not found!\n");
-	   exit(1);
-	   }
-	   fseek(fin, 0, SEEK_END);
-	   file_size = ftell(fin);
-	   fclose(fin);
-	*/
-}
 
 const tableSize = 1e8
 
@@ -88,8 +41,6 @@ func createUnigramTable(vocab []Term) [tableSize]int {
 }
 
 func main() {
-
-	BuildVocabulary2("vocabulary.txt")
 
 	// train_file
 	trainFile := flag.String("train_file", "", "Use text data from a file to train the model")

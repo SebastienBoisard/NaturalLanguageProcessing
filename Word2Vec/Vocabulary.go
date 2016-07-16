@@ -2,9 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"strings"
 )
 
 // Term ...
@@ -13,64 +11,15 @@ type Term struct {
 	word      string
 }
 
-// BuildVocabulary2 builds the vocabulary list
-func BuildVocabulary2(fileName string) {
-
-	file, err := os.Open(fileName)
-
-	if err != nil {
-		panic(err)
-	}
-
-	scanner := bufio.NewScanner(file)
-
-	// Set the Split method to ScanWords.
-	scanner.Split(bufio.ScanWords)
-
-	wordMap := make(map[string]*Term)
-
-	// Scan all words from the file.
-	for scanner.Scan() {
-		word := scanner.Text()
-		fmt.Println(word)
-
-		term, ok := wordMap[word]
-		if ok == true {
-			term.frequency++
-		} else {
-			wordMap[word] = &Term{frequency: 1}
-		}
-	}
-
-	for word, term := range wordMap {
-		fmt.Println("word=", word, " frequency=", term.frequency)
-	}
-
-	file.Close()
-}
-
-// BuildVocabulary builds the vocabulary list
-func BuildVocabulary(data []byte) []string {
-
-	w := strings.FieldsFunc(string(data), func(r rune) bool {
-		switch r {
-		case ',', '.', ' ':
-			return true
-		}
-		return false
-	})
-
-	return w
-}
-
 const vocabHashSize int = 30000000 // Maximum 30 * 0.7 = 21M words in the vocabulary
 
 // vocabMaxSize can be changed
-var vocabMaxSize = 10 //1000
+var vocabMaxSize = 1000
 
 const maxString = 100
 
 var vocab []Term
+
 var vocabHash []int
 
 var vocabSize int
@@ -95,13 +44,13 @@ func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
 		vocabHash[a] = -1
 	}
 
+	vocabSize = 0
+
 	file, err := os.Open(trainFileName)
 
 	if err != nil {
 		panic(err)
 	}
-
-	vocabSize = 0
 
 	addWordToVocab("</s>")
 
@@ -113,7 +62,7 @@ func learnVocabFromTrainFile(trainFileName string, vocab []Term) {
 	// Scan all words from the file.
 	for scanner.Scan() {
 		word := scanner.Text()
-		fmt.Println(word)
+		//fmt.Println(word)
 
 		pos := searchVocab(word)
 		if pos == -1 {
