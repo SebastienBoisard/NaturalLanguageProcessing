@@ -2,33 +2,27 @@ package main
 
 import "testing"
 
-func TestLearnVocabFromTrainFile(t *testing.T) {
-
-	initializeVocabulary()
-
-	learnVocabFromTrainFile("vocabulary.txt", vocab)
-
-	//fmt.Println(vocab)
-}
-
 func TestSortVocab(t *testing.T) {
 
 	initializeVocabulary()
 
 	var position int
 
+	position = addWordToVocab("</s>")
+	vocab[position].frequency = -1
+
 	position = addWordToVocab("first")
-	vocab[position].frequency = 40
+	vocab[position].frequency = 10
 
 	position = addWordToVocab("second")
 	vocab[position].frequency = 20
 
 	position = addWordToVocab("third")
-	vocab[position].frequency = 10
+	vocab[position].frequency = 40
 
 	sortVocab()
 
-	expectedVocabSize := 3
+	expectedVocabSize := 4
 	actualVocabSize := vocabSize
 
 	if expectedVocabSize != actualVocabSize {
@@ -38,21 +32,21 @@ func TestSortVocab(t *testing.T) {
 	var expectedWord, actualWord string
 
 	expectedWord = "third"
-	actualWord = vocab[0].word
-
-	if expectedWord != actualWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
-
-	expectedWord = "second"
 	actualWord = vocab[1].word
 
 	if expectedWord != actualWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
-	expectedWord = "first"
+	expectedWord = "second"
 	actualWord = vocab[2].word
+
+	if expectedWord != actualWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "first"
+	actualWord = vocab[3].word
 
 	if expectedWord != actualWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
@@ -207,4 +201,33 @@ func TestGetWordHash(t *testing.T) {
 	if actualHash != expectedHash {
 		t.Error("Expected", expectedHash, "got", actualHash)
 	}
+}
+
+func TestLearnVocabFromTrainFile(t *testing.T) {
+
+	initializeVocabulary()
+
+	learnVocabFromTrainFile("vocabulary.txt")
+
+	expectedVocab := []Term{
+		{word: "</s>", frequency: 0},
+		{word: "the", frequency: 10},
+		{word: "of", frequency: 9},
+		{word: "and", frequency: 7},
+		{word: "a", frequency: 6},
+		{word: "that", frequency: 5},
+		{word: "is", frequency: 5},
+	}
+
+	actualVocab := vocab
+
+	if len(actualVocab) != len(expectedVocab) {
+		t.Error("Expected", len(expectedVocab), "got", len(actualVocab))
+	}
+
+	//	fmt.Println(vocab[:vocabSize])
+
+	//createBinaryTree()
+
+	//	fmt.Println(vocab[:vocabSize])
 }
