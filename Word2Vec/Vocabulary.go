@@ -11,8 +11,8 @@ import (
 type Term struct {
 	frequency int64
 	word      string
-	code      [maxCodeLength]byte
 	point     [maxCodeLength]int
+	code      [maxCodeLength]byte
 	codelen   byte
 }
 
@@ -36,7 +36,7 @@ var minCount = int64(5)
 var trainWords int64
 
 func (term Term) String() string {
-	return fmt.Sprintf("{word=%s; frequency=%d; point=%v; code=%v; codelen=%d}\n", term.word, term.frequency, term.point[:term.codelen], term.code[:term.codelen], term.codelen)
+	return fmt.Sprintf("{word=%s; frequency=%d; point=%v; code=%v; codelen=%d}\n", term.word, term.frequency, term.point[:term.codelen+1], term.code[:term.codelen], term.codelen)
 }
 
 func initializeVocabulary() {
@@ -212,6 +212,8 @@ func sortVocab() {
 		}
 		vocabHash[hash] = index
 	}
+
+	vocabSize = len(vocab)
 
 	/*
 		//	size := vocabSize
