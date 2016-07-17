@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"os"
+	"sort"
 )
 
 // Term ...
@@ -25,6 +26,10 @@ var vocabHash []int
 var vocabSize int
 
 var minReduce int64
+
+var minCount = int64(5)
+
+var trainWords int64
 
 func initializeVocabulary() {
 	vocab = make([]Term, vocabMaxSize)
@@ -155,4 +160,57 @@ func getWordHash(word string) uint64 {
 	hash = hash % uint64(vocabHashSize)
 
 	return hash
+}
+
+// Terms is...
+type Terms []Term
+
+func (s Terms) Len() int {
+	return len(s)
+}
+func (s Terms) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s Terms) Less(i, j int) bool {
+	return s[i].frequency < s[j].frequency
+}
+
+// SortVocab sorts the vocabulary by frequency using word counts
+func sortVocab() {
+	// Sort the vocabulary and keep </s> at the first position
+
+	// TODO: manage the first vocab </s>
+	sort.Sort(Terms(vocab[0:vocabSize]))
+
+	for a := 0; a < vocabHashSize; a++ {
+		vocabHash[a] = -1
+	}
+
+	size := vocabSize
+	trainWords = 0
+	for a := 0; a < size; a++ {
+		// Words occuring less than minCount times will be discarded from the vocab
+		if vocab[a].frequency < minCount && a != 0 {
+			vocab = append(vocab[:a], vocab[a+1:]...)
+			vocabSize--
+		} else {
+			// Hash will be re-computed, as after the sorting it is not actual
+			hash := getWordHash(vocab[a].word)
+			for vocabHash[hash] != -1 {
+				hash = (hash + 1) % uint64(vocabHashSize)
+			}
+			vocabHash[hash] = a
+			trainWords += vocab[a].frequency
+			// TODO: add vocabHash tests in Vocabulary_test.go
+		}
+	}
+
+	/*
+	   vocab = (struct vocab_word *)realloc(vocab, (vocab_size + 1) * sizeof(struct vocab_word));
+	   // Allocate memory for the binary tree construction
+	   for (a = 0; a < vocab_size; a++) {
+	     vocab[a].code = (char *)calloc(MAX_CODE_LENGTH, sizeof(char));
+	     vocab[a].point = (int *)calloc(MAX_CODE_LENGTH, sizeof(int));
+	   }
+	*/
 }

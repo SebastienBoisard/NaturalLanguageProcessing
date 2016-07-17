@@ -11,6 +11,54 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 	//fmt.Println(vocab)
 }
 
+func TestSortVocab(t *testing.T) {
+
+	initializeVocabulary()
+
+	var position int
+
+	position = addWordToVocab("first")
+	vocab[position].frequency = 40
+
+	position = addWordToVocab("second")
+	vocab[position].frequency = 20
+
+	position = addWordToVocab("third")
+	vocab[position].frequency = 10
+
+	sortVocab()
+
+	expectedVocabSize := 3
+	actualVocabSize := vocabSize
+
+	if expectedVocabSize != actualVocabSize {
+		t.Error("Expected", expectedVocabSize, "got", actualVocabSize)
+	}
+
+	var expectedWord, actualWord string
+
+	expectedWord = "third"
+	actualWord = vocab[0].word
+
+	if expectedWord != actualWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "second"
+	actualWord = vocab[1].word
+
+	if expectedWord != actualWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "first"
+	actualWord = vocab[2].word
+
+	if expectedWord != actualWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+}
+
 func TestReduceVocab(t *testing.T) {
 
 	initializeVocabulary()
