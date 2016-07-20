@@ -33,7 +33,7 @@ var minReduce int64
 
 var minCount = int64(5)
 
-var trainWords int64
+//var trainWords int64
 
 func (term Term) String() string {
 	return fmt.Sprintf("{word=%s; frequency=%d; point=%v; code=%v; codelen=%d}\n", term.word, term.frequency, term.point[:term.codelen+1], term.code[:term.codelen], term.codelen)

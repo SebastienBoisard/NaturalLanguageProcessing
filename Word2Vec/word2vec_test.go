@@ -10,8 +10,6 @@ func TestCreateBinaryTree(t *testing.T) {
 
 	createBinaryTree()
 
-	//fmt.Println(vocab)
-
 	expectedVocab := []Term{
 		{word: "</s>", frequency: 0, point: [maxCodeLength]int{5, 3, -7}, code: [maxCodeLength]byte{0, 1}, codelen: 2},
 		{word: "the", frequency: 10, point: [maxCodeLength]int{5, 3, -6}, code: [maxCodeLength]byte{0, 0}, codelen: 2},
