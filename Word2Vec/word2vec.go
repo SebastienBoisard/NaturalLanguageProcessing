@@ -9,6 +9,8 @@ import (
 
 const tableSize = 1e8
 
+var table []int
+
 func createUnigramTable() []int {
 
 	const power float64 = 0.75
@@ -180,8 +182,12 @@ func trainModelThread(id int) {
 	//long long l1, l2, c, target, label, local_iter = iter;
 	//real f, g;
 	//	var cw int
+	//	var g float64
 
-	nextRandom := uint64(id)
+	var label int
+	var target int
+
+	nextRandom := int(id)
 
 	var wordCount, lastWordCount int
 	var sen [maxSentenceLength + 1]int
@@ -205,12 +211,11 @@ func trainModelThread(id int) {
 			lastWordCount = wordCount
 
 			fmt.Printf("%cAlpha: %f  Progress: %.2f%%  ", 13, alpha, float64(wordCountActual)/float64(iter*trainWords+1)*100)
+			alpha = startingAlpha * (1 - float64(wordCountActual)/float64(iter*trainWords+1))
+			if alpha < startingAlpha*0.0001 {
+				alpha = startingAlpha * 0.0001
+			}
 		}
-		alpha = startingAlpha * (1 - float64(wordCountActual)/float64(iter*trainWords+1))
-		if alpha < startingAlpha*0.0001 {
-			alpha = startingAlpha * 0.0001
-		}
-		//	}
 		sentenceLength := 0
 
 		if sentenceLength == 0 {
@@ -228,7 +233,7 @@ func trainModelThread(id int) {
 				// The subsampling randomly discards frequent words while keeping the ranking same
 				if sample > 0 {
 					ran := (math.Sqrt(float64(vocab[word].frequency)/(sample*float64(trainWords))) + 1) * (sample * float64(trainWords)) / float64(vocab[word].frequency)
-					nextRandom = nextRandom*uint64(25214903917) + 11
+					nextRandom = nextRandom*25214903917 + 11
 					if ran < float64(nextRandom&0xFFFF)/float64(65536.0) {
 						continue
 					}
@@ -241,6 +246,7 @@ func trainModelThread(id int) {
 			}
 			sentencePosition = 0
 		}
+
 		/*
 		      if feof(fi) || (wordCount > trainWords / num_threads) {
 		         wordCountActual += wordCount - lastWordCount
@@ -267,15 +273,114 @@ func trainModelThread(id int) {
 			neu1e[c] = 0
 		}
 
-		nextRandom = nextRandom*uint64(25214903917) + 11
-		//		b := nextRandom % uint64(*windowSize)
-		/*
-			if *cbowMode == true { //train the cbow architecture
-				// in -> hidden
-				cw := 0
-				for a := int(b); a < *windowSize*2+1-int(b); a++ {
-					if a != *windowSize {
-						c := sentencePosition - *windowSize + a
+		nextRandom = nextRandom*25214903917 + 11
+		b := nextRandom % windowSize
+
+		if cbowMode == true { //train the cbow architecture
+			// in -> hidden
+			cw := 0
+			for a := int(b); a < windowSize*2+1-int(b); a++ {
+				if a != windowSize {
+					c := sentencePosition - windowSize + a
+					if c < 0 {
+						continue
+					}
+					if c >= sentenceLength {
+						continue
+					}
+					lastWord := sen[c]
+					if lastWord == -1 {
+						continue
+					}
+					for c := 0; c < layer1Size; c++ {
+						neu1[c] += syn0[c+lastWord*layer1Size]
+					}
+					cw++
+				}
+			}
+
+			if cw > 0 {
+				for c := 0; c < layer1Size; c++ {
+					neu1[c] /= float64(cw)
+				}
+
+				if isHierarchicalSoftmaxActivated == true {
+					for d := 0; d < int(vocab[word].codelen); d++ {
+						f := 0.0
+						l2 := vocab[word].point[d] * layer1Size
+						// Propagate hidden -> output
+						for c := 0; c < layer1Size; c++ {
+							f += neu1[c] * syn1[c+l2]
+						}
+						if f <= -maxExp {
+							continue
+						} else {
+							if f >= maxExp {
+								continue
+							} else {
+								f = expTable[int((f+maxExp)*(expTableSize/maxExp/2))]
+							}
+						}
+
+						// 'g' is the gradient multiplied by the learning rate
+						g := float64(1-float64(vocab[word].code[d])-f) * alpha
+						// Propagate errors output -> hidden
+						for c := 0; c < layer1Size; c++ {
+							neu1e[c] += g * syn1[c+l2]
+						}
+						// Learn weights hidden -> output
+						for c := 0; c < layer1Size; c++ {
+							syn1[c+l2] += g * neu1[c]
+						}
+					}
+				}
+
+				// NEGATIVE SAMPLING
+				if numberOfNegativeExamples > 0 {
+					var label int
+					var g float64
+					for d := 0; d < numberOfNegativeExamples+1; d++ {
+						if d == 0 {
+							target = word
+							label = 1
+						} else {
+							nextRandom = nextRandom*25214903917 + 11
+							target = table[(nextRandom>>16)%tableSize]
+							if target == 0 {
+								target = nextRandom%(vocabSize-1) + 1
+							}
+							if target == word {
+								continue
+							}
+							label = 0
+						}
+						l2 := target * layer1Size
+						f := 0.0
+						for c := 0; c < layer1Size; c++ {
+							f += neu1[c] * syn1neg[c+l2]
+						}
+						if f > maxExp {
+							g = float64(label-1) * alpha
+						} else {
+							if f < -maxExp {
+								g = float64(label-0) * alpha
+							} else {
+								g = (float64(label) - expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * alpha
+							}
+						}
+						for c := 0; c < layer1Size; c++ {
+							neu1e[c] += g * syn1neg[c+l2]
+						}
+						for c := 0; c < layer1Size; c++ {
+							syn1neg[c+l2] += g * neu1[c]
+						}
+					}
+				}
+
+				// hidden -> in
+				for a := int(b); a < int(windowSize)*2+1-int(b); a++ {
+					if a != int(windowSize) {
+						c := sentencePosition - windowSize + a
 						if c < 0 {
 							continue
 						}
@@ -287,25 +392,39 @@ func trainModelThread(id int) {
 							continue
 						}
 						for c := 0; c < layer1Size; c++ {
-							neu1[c] += syn0[c+lastWord*layer1Size]
+							syn0[c+lastWord*layer1Size] += neu1e[c]
 						}
-						cw++
 					}
 				}
-
-				if cw > 0 {
-					for c := 0; c < layer1Size; c++ {
-						neu1[c] /= float64(cw)
+			}
+		} else { //train skip-gram
+			for a := b; a < windowSize*2+1-b; a++ {
+				if a != windowSize {
+					c := sentencePosition - windowSize + a
+					if c < 0 {
+						continue
 					}
-
-					if *isHierarchicalSoftmaxActivated {
+					if c >= sentenceLength {
+						continue
+					}
+					lastWord := sen[c]
+					if lastWord == -1 {
+						continue
+					}
+					l1 := lastWord * layer1Size
+					for c := 0; c < layer1Size; c++ {
+						neu1e[c] = 0
+					}
+					// HIERARCHICAL SOFTMAX
+					if isHierarchicalSoftmaxActivated == true {
 						for d := 0; d < int(vocab[word].codelen); d++ {
-							f := 0
+							f := 0.0
 							l2 := vocab[word].point[d] * layer1Size
 							// Propagate hidden -> output
 							for c := 0; c < layer1Size; c++ {
-								f += neu1[c] * syn1[c+l2]
+								f += syn0[c+l1] * syn1[c+l2]
 							}
+
 							if f <= -maxExp {
 								continue
 							} else {
@@ -317,29 +436,27 @@ func trainModelThread(id int) {
 							}
 
 							// 'g' is the gradient multiplied by the learning rate
-							g := (1 - vocab[word].code[d] - f) * alpha
+							g := (1 - float64(vocab[word].code[d]) - f) * alpha
 							// Propagate errors output -> hidden
 							for c := 0; c < layer1Size; c++ {
 								neu1e[c] += g * syn1[c+l2]
 							}
 							// Learn weights hidden -> output
 							for c := 0; c < layer1Size; c++ {
-								syn1[c+l2] += g * neu1[c]
+								syn1[c+l2] += g * syn0[c+l1]
 							}
 						}
 					}
 
 					// NEGATIVE SAMPLING
-					if *numberOfNegativeExamples > 0 {
-						var label int
-						var g float64
-						for d := 0; d < *numberOfNegativeExamples+1; d++ {
+					if numberOfNegativeExamples > 0 {
+						for d := 0; d < numberOfNegativeExamples+1; d++ {
 							if d == 0 {
-								target := word
+								target = word
 								label = 1
 							} else {
-								nextRandom = nextRandom*uint64(25214903917) + 11
-								target := table[(nextRandom>>16)%table_size]
+								nextRandom = nextRandom*25214903917 + 11
+								target = table[(nextRandom>>16)%tableSize]
 								if target == 0 {
 									target = nextRandom%(vocabSize-1) + 1
 								}
@@ -348,140 +465,42 @@ func trainModelThread(id int) {
 								}
 								label = 0
 							}
+							var g float64
 							l2 := target * layer1Size
-							f := 0
+							f := 0.0
 							for c := 0; c < layer1Size; c++ {
-								f += neu1[c] * syn1neg[c+l2]
+								f += syn0[c+l1] * syn1neg[c+l2]
 							}
 							if f > maxExp {
-								g := (label - 1) * alpha
+								g = float64(label-1) * alpha
 							} else {
 								if f < -maxExp {
-									g := (label - 0) * alpha
+									g = float64(label-0) * alpha
 								} else {
-									g := (label - expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * alpha
+									g = float64(float64(label)-expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * alpha
 								}
 							}
 							for c := 0; c < layer1Size; c++ {
 								neu1e[c] += g * syn1neg[c+l2]
 							}
 							for c := 0; c < layer1Size; c++ {
-								syn1neg[c+l2] += g * neu1[c]
+								syn1neg[c+l2] += g * syn0[c+l1]
 							}
 						}
 					}
 
-					// hidden -> in
-					for a := b; a < window*2+1-b; a++ {
-						if a != window {
-							c = sentencePosition - window + a
-							if c < 0 {
-								continue
-							}
-							if c >= sentenceLength {
-								continue
-							}
-							last_word = sen[c]
-							if last_word == -1 {
-								continue
-							}
-							for c := 0; c < layer1Size; c++ {
-								syn0[c+last_word*layer1Size] += neu1e[c]
-							}
-						}
+					// Learn weights input -> hidden
+					for c := 0; c < layer1Size; c++ {
+						syn0[c+l1] += neu1e[c]
 					}
 				}
-			}*/
-		/*else {  //train skip-gram
-		         for a := b; a < window * 2 + 1 - b; a++ {
-						if (a != window) {
-				           c = sentencePosition - window + a;
-				           if c < 0 {
-				   			  continue
-				   		  }
-				           if c >= sentenceLength {
-				   			  continue
-				   		  }
-				           last_word = sen[c]
-				           if last_word == -1 {
-				   			  continue
-				   		  }
-				           l1 = last_word * layer1Size;
-				           for c := 0; c < layer1Size; c++ {
-				   			  neu1e[c] = 0
-				   		  }
-				           // HIERARCHICAL SOFTMAX
-				           if hs {
-								  for d := 0; d < vocab[word].codelen; d++ {
-						             f = 0;
-						             l2 = vocab[word].point[d] * layer1Size;
-						             // Propagate hidden -> output
-						             for c := 0; c < layer1Size; c++ {
-						   				 f += syn0[c + l1] * syn1[c + l2]
-						   			 }
-
-						             if f <= -maxExp {
-						   				 continue
-						   			 } else {
-						   				 if f >= maxExp {
-						   				 	continue
-						   		 		 } else {
-						   				 	f = expTable[(int)((f + maxExp) * (expTableSize / maxExp / 2))]
-						   			 	}
-									 	 }
-
-						             // 'g' is the gradient multiplied by the learning rate
-						             g = (1 - vocab[word].code[d] - f) * alpha
-						             // Propagate errors output -> hidden
-						             for c := 0; c < layer1Size; c++ {neu1e[c] += g * syn1[c + l2]}
-						             // Learn weights hidden -> output
-						             for c := 0; c < layer1Size; c++ {syn1[c + l2] += g * syn0[c + l1]}
-					            }
-						  		}
-
-
-				           // NEGATIVE SAMPLING
-				           if negative > 0 {
-								  for d := 0; d < negative + 1; d++ {
-				             if d == 0 {
-				               target = word
-				               label = 1
-				             } else {
-				               nextRandom = nextRandom * uint64(25214903917) + 11
-				               target = table[(nextRandom >> 16) % table_size]
-				               if target == 0 {target = nextRandom % (vocab_size - 1) + 1}
-				               if target == word {continue}
-				               label = 0
-				             }
-				             l2 = target * layer1Size
-				             f = 0
-				             for c := 0; c < layer1Size; c++ {f += syn0[c + l1] * syn1neg[c + l2]}
-				             if f > maxExp {
-				   				 g = (label - 1) * alpha
-				   			 } else {
-				   				 if f < -maxExp {
-				   					 g = (label - 0) * alpha
-				   				 } else {
-				   				 	g = (label - expTable[(int)((f + maxExp) * (expTableSize / maxExp / 2))]) * alpha
-				   			 	 }
-				   		 	 }
-				             for c := 0; c < layer1Size; c++ {neu1e[c] += g * syn1neg[c + l2]}
-				             for c := 0; c < layer1Size; c++ {syn1neg[c + l2] += g * syn0[c + l1]}
-				           }
-
-				           // Learn weights input -> hidden
-				           for c := 0; c < layer1Size; c++ {
-				   			  syn0[c + l1] += neu1e[c]
-				   		  }
-					  	}
-		         }
-				 }*/
+			}
+		}
 		sentencePosition++
 		if sentencePosition >= sentenceLength {
 			sentenceLength = 0
 			continue
 		}
-		/*	*/
 	}
 	//  	fclose(fi);
 	//  	free(neu1);
@@ -502,7 +521,7 @@ func trainModel() {
 	initializeNetwork()
 
 	if numberOfNegativeExamples > 0 {
-		createUnigramTable()
+		table = createUnigramTable()
 	}
 
 	//start = clock();
