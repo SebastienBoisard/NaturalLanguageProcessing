@@ -9,11 +9,11 @@ import (
 
 const tableSize = 1e8
 
-func createUnigramTable() [tableSize]int {
+func createUnigramTable() []int {
 
 	const power float64 = 0.75
 
-	var unigramTable [tableSize]int
+	unigramTable := make([]int, tableSize)
 
 	var trainWordsPow float64
 	trainWordsPow = 0.0

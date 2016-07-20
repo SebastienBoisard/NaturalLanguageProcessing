@@ -100,3 +100,84 @@ func TestInitializeExpTable(t *testing.T) {
 		t.Error("Expected", expectedExp, "got", actualExp)
 	}
 }
+
+func TestCreateUnigramTable(t *testing.T) {
+
+	corpusFile := "text10.corpus"
+	initializeVocabulary()
+	learnVocabFromTrainFile(corpusFile)
+	initializeNetwork()
+
+	unigramTable := createUnigramTable()
+
+	expectedUnigramTableSize := int(1e8)
+	actualUnigramTableSize := len(unigramTable)
+
+	if actualUnigramTableSize != expectedUnigramTableSize {
+		t.Error("Expected", expectedUnigramTableSize, "got", actualUnigramTableSize)
+	}
+
+	var expectedUnigramTableValue, actualUnigramTableValue int
+	expectedUnigramTableValue = 3
+	actualUnigramTableValue = unigramTable[6889208]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 5
+	actualUnigramTableValue = unigramTable[10564422]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 7
+	actualUnigramTableValue = unigramTable[15192095]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 9
+	actualUnigramTableValue = unigramTable[16638081]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 11
+	actualUnigramTableValue = unigramTable[18767860]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 41
+	actualUnigramTableValue = unigramTable[37003654]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 261
+	actualUnigramTableValue = unigramTable[76969030]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 462
+	actualUnigramTableValue = unigramTable[95301961]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+
+	expectedUnigramTableValue = 524
+	actualUnigramTableValue = unigramTable[99999999]
+
+	if actualUnigramTableValue != expectedUnigramTableValue {
+		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	}
+}
