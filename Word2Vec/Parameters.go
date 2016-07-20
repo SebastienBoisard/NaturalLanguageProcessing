@@ -2,6 +2,8 @@ package main
 
 import "flag"
 
+// TODO: add comments to explain the purpose of each of those parameters
+
 var trainFile string
 var outputFile string
 var layer1Size int
@@ -20,6 +22,8 @@ var saveVocabFile string
 var readVocabFile string
 var cbowMode bool
 
+// manageParameters parses the command line parameters of Word2Vec
+// Warning: a boolean parameter is set to true if it appears in the commande line (e.g. -hs), otherwise it is set to false.
 func manageParameters() {
 
 	// train_file
@@ -74,24 +78,4 @@ func manageParameters() {
 	flag.BoolVar(&cbowMode, "cbow", true, "Use the continuous bag of words model; default is 1 (use 0 for skip-gram model)")
 
 	flag.Parse()
-	/*
-		fmt.Println("train_file:", *trainFile)
-		fmt.Println("output_file:", *outputFile)
-		fmt.Println("word_vectors_size:", *wordVectorsSize)
-		fmt.Println("window_size:", *windowSize)
-		fmt.Println("sample:", *occurrenceWordsThreshold)
-		fmt.Println("hs:", isHierarchicalSoftmaxActivated)
-		fmt.Println("negative:", *numberOfNegativeExamples)
-		fmt.Println("num_threads:", *numberOfThreads)
-		fmt.Println("iter:", *numberOfIterations)
-		fmt.Println("min-count:", *minWordOccurrencesThreshold)
-
-		fmt.Println("alpha:", *startingLearningRate)
-		fmt.Println("classes:", *numberOfClasses)
-		fmt.Println("debug:", *debugMode)
-		fmt.Println("binary:", *binaryMode)
-		fmt.Println("save-vocab:", *saveVocabFile)
-		fmt.Println("read-vocab:", *readVocabFile)
-		fmt.Println("cbow:", *cbowMode)
-	*/
 }

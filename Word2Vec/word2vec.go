@@ -598,15 +598,16 @@ func trainModel() {
 	}
 }
 
-func main() {
-
-	fmt.Println("args=", os.Args)
-
-	manageParameters()
-
+func initializeExpTable() {
 	for i := 0; i < expTableSize; i++ {
 		expTable[i] = math.Exp(float64(i/expTableSize*2-1) * float64(maxExp)) // Precompute the exp() table
 		expTable[i] = expTable[i] / (expTable[i] + 1)                         // Precompute f(x) = x / (x + 1)
 	}
+}
+
+func main() {
+
+	manageParameters()
+	initializeExpTable()
 
 }

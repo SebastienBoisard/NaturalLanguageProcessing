@@ -7,8 +7,9 @@ import (
 
 func TestManageParameters(t *testing.T) {
 
+	// bin\Word2Vec.exe -train_file text10.txt -output_file vectors.bin -size 200 -window 8 -sample 1e-4 -hs -negative 25 -num_threads 20 -iter 15 -binary
 	os.Args = []string{"bin\\Word2Vec.exe", "-train_file", "text10.txt", "-output_file", "vectors.bin", "-size", "200", "-window", "8", "-sample", "1e-4",
-		"-hs", "-negative", "25", "-num_threads", "20", "-iter", "15", "-binary"}
+		"-hs", "-num_threads", "20", "-iter", "15", "-binary", "-negative", "25"}
 
 	expectedTrainFile := "text10.txt"
 	actualTrainFile := &trainFile

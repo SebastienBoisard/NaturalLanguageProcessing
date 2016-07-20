@@ -65,3 +65,38 @@ func TestCreateBinaryTree(t *testing.T) {
 
 	}
 }
+
+func TestInitializeExpTable(t *testing.T) {
+
+	initializeExpTable()
+
+	var expectedExp, actualExp float64
+
+	expectedExp = 0.0024726231566347748
+	actualExp = expTable[0]
+
+	if expectedExp != actualExp {
+		t.Error("Expected", expectedExp, "got", actualExp)
+	}
+
+	expectedExp = 0.00278699607588350773
+	actualExp = expTable[10]
+
+	if expectedExp != actualExp {
+		t.Error("Expected", expectedExp, "got", actualExp)
+	}
+
+	expectedExp = 0.00816257018595933914
+	actualExp = expTable[100]
+
+	if expectedExp != actualExp {
+		t.Error("Expected", expectedExp, "got", actualExp)
+	}
+
+	expectedExp = 0.99749761819839477539
+	actualExp = expTable[999]
+
+	if expectedExp != actualExp {
+		t.Error("Expected", expectedExp, "got", actualExp)
+	}
+}
