@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"bufio"
+	"os"
+	"testing"
+)
 
 func TestSortVocab(t *testing.T) {
 
@@ -230,4 +234,59 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 	//createBinaryTree()
 
 	//	fmt.Println(vocab[:vocabSize])
+}
+
+func TestReadWord(t *testing.T) {
+	testFile := "text11.txt"
+	f, err := os.Open(testFile)
+	if err != nil {
+		t.Error(testFile, " error", err)
+	}
+	defer f.Close()
+
+	reader := bufio.NewReader(f)
+
+	var expectedWord, actualWord string
+
+	expectedWord = "First"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "second"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "third"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "</s>"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "Fourth"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
+
+	expectedWord = "</s>"
+	actualWord = readWord(reader)
+
+	if actualWord != expectedWord {
+		t.Error("Expected", expectedWord, "got", actualWord)
+	}
 }

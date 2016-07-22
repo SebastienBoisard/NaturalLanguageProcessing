@@ -11,6 +11,30 @@ const tableSize = 1e8
 
 var table []int
 
+const maxCodeLength = 40
+
+const maxSentenceLength = 1000
+
+const maxExp = 6
+
+const expTableSize = 1000
+
+var expTable [expTableSize + 1]float64
+
+var startingAlpha float64
+
+var fileSize int
+
+var wordCountActual = 0
+
+var alpha = 0.025
+
+var trainWords = 0
+
+var sample = 1e-3
+
+var syn0, syn1, syn1neg []float64
+
 func createUnigramTable() []int {
 
 	const power float64 = 0.75
@@ -42,16 +66,6 @@ func createUnigramTable() []int {
 
 	return unigramTable
 }
-
-const maxCodeLength = 40
-
-const maxSentenceLength = 1000
-
-const maxExp = 6
-
-const expTableSize = 1000
-
-var expTable [expTableSize + 1]float64
 
 // createBinaryTree creates binary Huffman tree using the word counts
 // Frequent words will have short unique binary codes
@@ -135,8 +149,6 @@ func createBinaryTree() {
 	//free(parent_node);
 }
 
-var syn0, syn1, syn1neg []float64
-
 func initializeNetwork() {
 	isHierarchicalSoftmaxActivated = true
 
@@ -163,18 +175,6 @@ func initializeNetwork() {
 
 	createBinaryTree()
 }
-
-var startingAlpha float64
-
-var fileSize int
-
-var wordCountActual = 0
-
-var alpha = 0.025
-var iter = 5
-var trainWords = 0
-
-var sample = 1e-3
 
 func trainModelThread(id int) {
 	//  long long a, b, d, cw, word, last_word, sentenceLength = 0, sentencePosition = 0;
@@ -210,8 +210,8 @@ func trainModelThread(id int) {
 			wordCountActual += wordCount - lastWordCount
 			lastWordCount = wordCount
 
-			fmt.Printf("%cAlpha: %f  Progress: %.2f%%  ", 13, alpha, float64(wordCountActual)/float64(iter*trainWords+1)*100)
-			alpha = startingAlpha * (1 - float64(wordCountActual)/float64(iter*trainWords+1))
+			fmt.Printf("%cAlpha: %f  Progress: %.2f%%  ", 13, alpha, float64(wordCountActual)/float64(numberOfIterations*trainWords+1)*100)
+			alpha = startingAlpha * (1 - float64(wordCountActual)/float64(numberOfIterations*trainWords+1))
 			if alpha < startingAlpha*0.0001 {
 				alpha = startingAlpha * 0.0001
 			}
@@ -276,9 +276,12 @@ func trainModelThread(id int) {
 		nextRandom = nextRandom*25214903917 + 11
 		b := nextRandom % windowSize
 
-		if cbowMode == true { //train the cbow architecture
+		if cbowMode == true {
+			//train the cbow architecture
+
 			// in -> hidden
 			cw := 0
+
 			for a := int(b); a < windowSize*2+1-int(b); a++ {
 				if a != windowSize {
 					c := sentencePosition - windowSize + a
@@ -300,6 +303,7 @@ func trainModelThread(id int) {
 			}
 
 			if cw > 0 {
+
 				for c := 0; c < layer1Size; c++ {
 					neu1[c] /= float64(cw)
 				}
@@ -557,7 +561,7 @@ func trainModel() {
 		// int clcn = classes, iter = 10, closeid;
 
 		clcn := numberOfClasses
-		iter := 10
+		numberOfIterations = 10
 		var closeid int
 
 		var closev, x float64
@@ -569,7 +573,7 @@ func trainModel() {
 			cl[a] = a % clcn
 		}
 
-		for a := 0; a < iter; a++ {
+		for a := 0; a < numberOfIterations; a++ {
 			for b := 0; b < clcn*layer1Size; b++ {
 				cent[b] = 0
 			}

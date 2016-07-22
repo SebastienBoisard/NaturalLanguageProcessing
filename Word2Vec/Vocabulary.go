@@ -250,3 +250,46 @@ func sortVocab() {
 	   }
 	*/
 }
+
+// Reads a single word from a file, assuming space + tab + EOL to be word boundaries
+func readWord(reader *bufio.Reader) string {
+	a := 0
+	var word string
+
+	for {
+		ch, err := reader.ReadByte()
+		if err != nil {
+			return word
+		}
+		if ch == 13 || ch == ',' || ch == '.' {
+			continue
+		}
+		if ch == ' ' || ch == '\t' || ch == '\n' {
+			if a > 0 {
+				if ch == '\n' {
+					reader.UnreadByte()
+				}
+				break
+			}
+			if ch == '\n' {
+				word = "</s>"
+				return word
+			}
+			continue
+		}
+		word += string(ch)
+		a++
+		if a >= maxString-1 {
+			// Truncate too long words
+			a--
+		}
+	}
+	return word
+}
+
+// Reads a word and returns its index in the vocabulary
+func readWordIndex(reader *bufio.Reader) int {
+	word := readWord(reader)
+	//  if (feof(fin)) return -1;
+	return searchVocab(word)
+}
