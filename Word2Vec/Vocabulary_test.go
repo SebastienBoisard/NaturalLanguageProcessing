@@ -249,42 +249,66 @@ func TestReadWord(t *testing.T) {
 	var expectedWord, actualWord string
 
 	expectedWord = "First"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
 	expectedWord = "second"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
 	expectedWord = "third"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
 	expectedWord = "</s>"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
 	expectedWord = "Fourth"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)
 	}
 
 	expectedWord = "</s>"
-	actualWord = readWord(reader)
+	actualWord, err = readWord(reader)
+
+	if err != nil {
+		t.Error("Expected nil")
+	}
 
 	if actualWord != expectedWord {
 		t.Error("Expected", expectedWord, "got", actualWord)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"math"
@@ -29,13 +30,15 @@ var wordCountActual = 0
 
 var alpha = 0.025
 
-var trainWords = 0
-
-var sample = 1e-3
+var trainWords int
 
 var syn0, syn1, syn1neg []float64
 
+var isEndFile = false
+
 func createUnigramTable() []int {
+
+	fmt.Println("createUnigramTable BEGIN")
 
 	const power float64 = 0.75
 
@@ -70,6 +73,8 @@ func createUnigramTable() []int {
 // createBinaryTree creates binary Huffman tree using the word counts
 // Frequent words will have short unique binary codes
 func createBinaryTree() {
+
+	fmt.Println("createBinaryTree BEGIN")
 
 	var code [maxCodeLength]byte
 	var point [maxCodeLength]int
@@ -177,6 +182,9 @@ func initializeNetwork() {
 }
 
 func trainModelThread(id int) {
+
+	fmt.Println("trainModelThread[", id, "] BEGIN")
+
 	//  long long a, b, d, cw, word, last_word, sentenceLength = 0, sentencePosition = 0;
 	//long long wordCount = 0, lastWordCount = 0, sen[maxSentenceLength + 1];
 	//long long l1, l2, c, target, label, local_iter = iter;
@@ -187,53 +195,91 @@ func trainModelThread(id int) {
 	var label int
 	var target int
 
-	nextRandom := int(id)
+	nextRandom := uint64(id)
 
 	var wordCount, lastWordCount int
 	var sen [maxSentenceLength + 1]int
 
 	sentencePosition := 0
+	localIter := numberOfIterations
 
 	neu1 := make([]float64, layer1Size)
 	neu1e := make([]float64, layer1Size)
 
+	isEndFile = false
 	fi, err := os.Open(trainFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fi.Close()
 
-	fi.Seek(int64(fileSize/numberOfThreads*id), 0)
+	filePosition := int64(fileSize / numberOfThreads * id)
+	fi.Seek(filePosition, 0)
 
+	fmt.Println("trainModelThread[", id, "] numberOfThreads=", numberOfThreads, "filePosition=", filePosition)
+
+	reader := bufio.NewReader(fi)
+
+	sentenceLength := 0
+	counter2 := 0
 	for {
+		counter2++
+
+		fmt.Println("trainModelThread[", id, "][", counter2, "] wordCount=", wordCount, "lastWordCount=", lastWordCount)
+
 		if wordCount-lastWordCount > 10000 {
 			wordCountActual += wordCount - lastWordCount
 			lastWordCount = wordCount
 
-			fmt.Printf("%cAlpha: %f  Progress: %.2f%%  ", 13, alpha, float64(wordCountActual)/float64(numberOfIterations*trainWords+1)*100)
+			fmt.Printf("%cAlpha: %f  Progress: %.2f%%\n", 13, alpha, float64(wordCountActual)/float64(numberOfIterations*trainWords+1)*100)
 			alpha = startingAlpha * (1 - float64(wordCountActual)/float64(numberOfIterations*trainWords+1))
+
 			if alpha < startingAlpha*0.0001 {
 				alpha = startingAlpha * 0.0001
 			}
 		}
-		sentenceLength := 0
+
+		fmt.Println("trainModelThread[", id, "][", counter2, "] sentenceLength=", sentenceLength)
 
 		if sentenceLength == 0 {
+
+			counter := 0
 			for {
-				// word = ReadWordIndex(fi)
-				// if feof(fi) {					break				}
-				word := 0
+				counter++
+				word := readWordIndex(reader)
+
+				if word > 0 {
+					fmt.Println("trainModelThread[", id, "][", counter, "] word=", vocab[word].word, " (", word, ")")
+				} else {
+					fmt.Println("trainModelThread[", id, "][", counter, "] word_id=", word)
+				}
+
+				if isEndFile == true {
+					break
+				}
+
+				// Test if the word was found
 				if word == -1 {
 					continue
 				}
+
 				wordCount++
+
+				// Test if the word is '\n'
 				if word == 0 {
 					break
 				}
 				// The subsampling randomly discards frequent words while keeping the ranking same
-				if sample > 0 {
-					ran := (math.Sqrt(float64(vocab[word].frequency)/(sample*float64(trainWords))) + 1) * (sample * float64(trainWords)) / float64(vocab[word].frequency)
+				if occurrenceWordsThreshold > 0 {
+
+					// fmt.Println("trainModelThread[", id, "] vocab[word].frequency=", vocab[word].frequency, "occurrenceWordsThreshold=", occurrenceWordsThreshold, "trainWords=", trainWords)
+
+					ran := (math.Sqrt(float64(vocab[word].frequency)/(occurrenceWordsThreshold*float64(trainWords))) + 1) * (occurrenceWordsThreshold * float64(trainWords)) / float64(vocab[word].frequency)
 					nextRandom = nextRandom*25214903917 + 11
+
+					// fmt.Println("trainModelThread[", id, "] ran=", ran)
+					// fmt.Println("trainModelThread[", id, "] nextRandom=", nextRandom)
+
 					if ran < float64(nextRandom&0xFFFF)/float64(65536.0) {
 						continue
 					}
@@ -244,25 +290,30 @@ func trainModelThread(id int) {
 					break
 				}
 			}
+
 			sentencePosition = 0
+
+			for i, v := range sen {
+				fmt.Println("trainModelThread[", id, "] sen[", i, "]=", v)
+			}
 		}
 
-		/*
-		      if feof(fi) || (wordCount > trainWords / num_threads) {
-		         wordCountActual += wordCount - lastWordCount
-		         local_iter--
-		         if local_iter == 0 {
-		   			break
-		   		}
-		         wordCount = 0
-		         lastWordCount = 0
-		         sentenceLength = 0
-		         //fi.fseek(file_size / (long long)num_threads * (long long)id, 0)
-		         continue
-		   	}
-		*/
+		if isEndFile == true || wordCount > trainWords/numberOfThreads {
+			wordCountActual += wordCount - lastWordCount
+			localIter--
+			if localIter == 0 {
+				break
+			}
+			wordCount = 0
+			lastWordCount = 0
+			sentenceLength = 0
+			//fi.fseek(file_size / (long long)num_threads * (long long)id, 0)
+			continue
+		}
 
 		word := sen[sentencePosition]
+		fmt.Println("trainModelThread[", id, "][", counter2, "] word=", word, "sentencePosition=", sentencePosition)
+
 		if word == -1 {
 			continue
 		}
@@ -274,10 +325,14 @@ func trainModelThread(id int) {
 		}
 
 		nextRandom = nextRandom*25214903917 + 11
-		b := nextRandom % windowSize
+		b := int(nextRandom % uint64(windowSize))
+
+		fmt.Println("trainModelThread[", id, "][", counter2, "] nextRandom=", nextRandom, "b=", b)
 
 		if cbowMode == true {
 			//train the cbow architecture
+
+			fmt.Println("trainModelThread[", id, "][", counter2, "] cbowMode on")
 
 			// in -> hidden
 			cw := 0
@@ -304,11 +359,16 @@ func trainModelThread(id int) {
 
 			if cw > 0 {
 
+				fmt.Println("trainModelThread[", id, "][", counter2, "] cw > 0")
+
 				for c := 0; c < layer1Size; c++ {
 					neu1[c] /= float64(cw)
 				}
 
 				if isHierarchicalSoftmaxActivated == true {
+
+					fmt.Println("trainModelThread[", id, "][", counter2, "] isHierarchicalSoftmaxActivated")
+
 					for d := 0; d < int(vocab[word].codelen); d++ {
 						f := 0.0
 						l2 := vocab[word].point[d] * layer1Size
@@ -341,6 +401,9 @@ func trainModelThread(id int) {
 
 				// NEGATIVE SAMPLING
 				if numberOfNegativeExamples > 0 {
+
+					fmt.Println("trainModelThread[", id, "][", counter2, "] numberOfNegativeExamples > 0")
+
 					var label int
 					var g float64
 					for d := 0; d < numberOfNegativeExamples+1; d++ {
@@ -349,9 +412,10 @@ func trainModelThread(id int) {
 							label = 1
 						} else {
 							nextRandom = nextRandom*25214903917 + 11
+							// fmt.Println("trainModelThread[", id, "] nextRandom=", nextRandom, "(nextRandom>>16)%tableSize=", (nextRandom>>16)%tableSize)
 							target = table[(nextRandom>>16)%tableSize]
 							if target == 0 {
-								target = nextRandom%(vocabSize-1) + 1
+								target = int(nextRandom%uint64(vocabSize-1)) + 1
 							}
 							if target == word {
 								continue
@@ -401,7 +465,11 @@ func trainModelThread(id int) {
 					}
 				}
 			}
-		} else { //train skip-gram
+		} else {
+			//train skip-gram
+
+			fmt.Println("trainModelThread[", id, "] skip-gram")
+
 			for a := b; a < windowSize*2+1-b; a++ {
 				if a != windowSize {
 					c := sentencePosition - windowSize + a
@@ -462,7 +530,7 @@ func trainModelThread(id int) {
 								nextRandom = nextRandom*25214903917 + 11
 								target = table[(nextRandom>>16)%tableSize]
 								if target == 0 {
-									target = nextRandom%(vocabSize-1) + 1
+									target = int(nextRandom%uint64(vocabSize-1)) + 1
 								}
 								if target == word {
 									continue
@@ -513,6 +581,8 @@ func trainModelThread(id int) {
 }
 
 func trainModel() {
+	fmt.Println("trainModel BEGIN")
+
 	//long a, b, c, d;
 	//FILE *fo;
 	//pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
@@ -529,6 +599,8 @@ func trainModel() {
 	}
 
 	//start = clock();
+
+	trainModelThread(0)
 
 	//for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainModelThread, (void *)a);
 	//for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
@@ -630,7 +702,11 @@ func initializeExpTable() {
 
 func main() {
 
+	// Word2Vec -train_file text10.txt -output_file vectors.bin -cbow  -size 200 -window 8 -negative 25 -sample 1e-4 -num_threads 1 -binary -iter 15 > a.txt
+
 	manageParameters()
 	initializeExpTable()
+	initializeVocabulary()
+	trainModel()
 
 }

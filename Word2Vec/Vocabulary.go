@@ -33,8 +33,6 @@ var minReduce int64
 
 var minCount = int64(5)
 
-//var trainWords int64
-
 func (term Term) String() string {
 	return fmt.Sprintf("{word=%s; frequency=%d; point=%v; code=%v; codelen=%d}\n", term.word, term.frequency, term.point[:term.codelen+1], term.code[:term.codelen], term.codelen)
 }
@@ -65,39 +63,86 @@ func learnVocabFromTrainFile(trainFileName string) {
 		panic(err)
 	}
 
+	reader := bufio.NewReader(file)
+
 	addWordToVocab("</s>")
 
-	scanner := bufio.NewScanner(file)
+	counter := 0
 
-	// Set the Split method to ScanWords.
-	scanner.Split(bufio.ScanWords)
+	for {
+		word, err := readWord(reader)
 
-	// TODO: manage the \n as </s>
+		if err != nil {
+			fmt.Println("learnVocabFromTrainFile [", counter, "] break err=", err)
+			break
+		}
 
-	// Scan all words from the file.
-	for scanner.Scan() {
-		word := scanner.Text()
-		//fmt.Println(word)
+		// fmt.Println("learnVocabFromTrainFile [", counter, "] word=", word)
+
+		// if (feof(fin)) break;
+
+		trainWords++
 
 		pos := searchVocab(word)
+		// fmt.Println("learnVocabFromTrainFile [", counter, "] pos1=", pos)
+
 		if pos == -1 {
 			pos = addWordToVocab(word)
+			// fmt.Println("learnVocabFromTrainFile [", counter, "] pos2=", pos)
 		}
+
 		vocab[pos].frequency++
 
 		if float32(vocabSize) > float32(vocabHashSize)*0.7 {
 			reduceVocab()
 		}
-		//fmt.Print("vocab[", pos, "]=", vocab[pos])
-	}
 
+		counter++
+
+	}
+	/*
+		scanner := bufio.NewScanner(file)
+
+		// Set the Split method to ScanWords.
+		scanner.Split(bufio.ScanWords)
+
+		counter := 0
+		// Scan all words from the file.
+		for scanner.Scan() {
+			word := scanner.Text()
+
+			fmt.Println("learnVocabFromTrainFile [", counter, "] word=", word)
+			//fmt.Println(word)
+
+			pos := searchVocab(word)
+
+			fmt.Println("learnVocabFromTrainFile [", counter, "] pos1=", pos)
+
+			if pos == -1 {
+				pos = addWordToVocab(word)
+				fmt.Println("learnVocabFromTrainFile [", counter, "] pos2=", pos)
+			}
+
+			vocab[pos].frequency++
+
+			if float32(vocabSize) > float32(vocabHashSize)*0.7 {
+				reduceVocab()
+			}
+			//fmt.Print("vocab[", pos, "]=", vocab[pos])
+			counter++
+		}
+	*/
 	//	vocab = vocab[:vocabSize]
 
 	sortVocab()
+
+	fmt.Println("learnVocabFromTrainFile vocabSize=", vocabSize)
+	fmt.Println("learnVocabFromTrainFile trainWords=", trainWords)
 }
 
 // reduceVocab reduces the vocabulary by removing infrequent words
 func reduceVocab() {
+	fmt.Println("reduceVocab BEGIN")
 
 	nbWordRemoved := 0
 	for a := 0; a < vocabSize; a++ {
@@ -121,18 +166,24 @@ func reduceVocab() {
 		vocabHash[hash] = a
 	}
 	minReduce++
+
+	fmt.Println("reduceVocab END")
 }
 
 // searchVocab returns position of a word in the vocabulary; if the word is not found, returns -1
+// 0 is for '\n'
 func searchVocab(word string) int {
 	hash := getWordHash(word)
 	for {
 		if vocabHash[hash] == -1 {
 			return -1
 		}
+
 		if word == vocab[vocabHash[hash]].word {
+			// fmt.Println("searchVocab word=", word, "hash=", hash, "vocabHash=", vocabHash[hash])
 			return vocabHash[hash]
 		}
+
 		hash = (hash + 1) % uint64(vocabHashSize)
 	}
 }
@@ -184,15 +235,27 @@ func (s Terms) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s Terms) Less(i, j int) bool {
+	if s[i].frequency == s[j].frequency {
+		return s[i].word < s[j].word
+	}
 	return s[i].frequency > s[j].frequency
 }
 
 // SortVocab sorts the vocabulary by frequency using word counts
 func sortVocab() {
+	fmt.Println("sortVocab BEGIN")
 	// Sort the vocabulary and keep </s> at the first position
+
+	// for index, currentVocab := range vocab {
+	// 	fmt.Println("SortVocab before sort vocab[", index, "].word=", currentVocab.word, "frequency=", currentVocab.frequency)
+	// }
 
 	// TODO: manage the first vocab </s>
 	sort.Sort(Terms(vocab[1:]))
+
+	// for index, currentVocab := range vocab {
+	// 	fmt.Println("SortVocab after sort vocab[", index, "].word=", currentVocab.word, "frequency=", currentVocab.frequency)
+	// }
 
 	for a := 0; a < vocabHashSize; a++ {
 		vocabHash[a] = -1
@@ -200,10 +263,13 @@ func sortVocab() {
 
 	for index, currentVocab := range vocab[1:] {
 		if currentVocab.frequency < minCount {
+			// fmt.Println("SortVocab delete vocab[", index, "].word=", currentVocab.word)
 			vocab = vocab[:index+1]
 			break
 		}
 	}
+
+	trainWords = 0
 
 	for index, currentVocab := range vocab {
 		hash := getWordHash(currentVocab.word)
@@ -211,9 +277,13 @@ func sortVocab() {
 			hash = (hash + 1) % uint64(vocabHashSize)
 		}
 		vocabHash[hash] = index
+		trainWords += int(currentVocab.frequency)
+		// fmt.Println("SortVocab keep vocab[", index, "].word=", currentVocab.word, "with new hash=", hash)
 	}
 
 	vocabSize = len(vocab)
+
+	fmt.Println("sortVocab END")
 
 	/*
 		//	size := vocabSize
@@ -252,20 +322,20 @@ func sortVocab() {
 }
 
 // Reads a single word from a file, assuming space + tab + EOL to be word boundaries
-func readWord(reader *bufio.Reader) string {
-	a := 0
+func readWord(reader *bufio.Reader) (string, error) {
 	var word string
 
 	for {
 		ch, err := reader.ReadByte()
 		if err != nil {
-			return word
+			isEndFile = true
+			return word, err
 		}
 		if ch == 13 || ch == ',' || ch == '.' {
 			continue
 		}
 		if ch == ' ' || ch == '\t' || ch == '\n' {
-			if a > 0 {
+			if len(word) > 0 {
 				if ch == '\n' {
 					reader.UnreadByte()
 				}
@@ -273,23 +343,19 @@ func readWord(reader *bufio.Reader) string {
 			}
 			if ch == '\n' {
 				word = "</s>"
-				return word
+				break
 			}
 			continue
 		}
 		word += string(ch)
-		a++
-		if a >= maxString-1 {
-			// Truncate too long words
-			a--
-		}
 	}
-	return word
+	return word, nil
 }
 
 // Reads a word and returns its index in the vocabulary
 func readWordIndex(reader *bufio.Reader) int {
-	word := readWord(reader)
+	word, _ := readWord(reader)
 	//  if (feof(fin)) return -1;
+	// fmt.Println("readWordIndex word=", word)
 	return searchVocab(word)
 }
