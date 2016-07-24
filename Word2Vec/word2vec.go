@@ -227,6 +227,10 @@ func trainModelThread(id int) {
 
 		fmt.Println("trainModelThread[", id, "][", counter2, "] wordCount=", wordCount, "lastWordCount=", lastWordCount)
 
+		for c := 0; c < layer1Size; c++ {
+			fmt.Printf("trainModelThread[ %d ][ %d ] new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
+		}
+
 		if wordCount-lastWordCount > 10000 {
 			wordCountActual += wordCount - lastWordCount
 			lastWordCount = wordCount
@@ -248,11 +252,11 @@ func trainModelThread(id int) {
 				counter++
 				word := readWordIndex(reader)
 
-				if word > 0 {
-					fmt.Println("trainModelThread[", id, "][", counter, "] word=", vocab[word].word, " (", word, ")")
-				} else {
-					fmt.Println("trainModelThread[", id, "][", counter, "] word_id=", word)
-				}
+				// if word > 0 {
+				// 	fmt.Println("trainModelThread[", id, "][", counter2, "][", counter, "] word=", vocab[word].word, " (", word, ")")
+				// } else {
+				// 	fmt.Println("trainModelThread[", id, "][", counter2, "][", counter, "] word_id=", word)
+				// }
 
 				if isEndFile == true {
 					break
@@ -293,15 +297,16 @@ func trainModelThread(id int) {
 
 			sentencePosition = 0
 
-			for i, v := range sen {
-				fmt.Println("trainModelThread[", id, "] sen[", i, "]=", v)
-			}
+			// for i, v := range sen[:sentenceLength] {
+			// 	fmt.Println("trainModelThread[", id, "][", counter2, "] sen[", i, "]=", v)
+			// }
 		}
 
 		if isEndFile == true || wordCount > trainWords/numberOfThreads {
 			wordCountActual += wordCount - lastWordCount
 			localIter--
 			if localIter == 0 {
+				fmt.Println("trainModelThread[", id, "][", counter2, "] locaIter==0 so break")
 				break
 			}
 			wordCount = 0
@@ -332,7 +337,7 @@ func trainModelThread(id int) {
 		if cbowMode == true {
 			//train the cbow architecture
 
-			fmt.Println("trainModelThread[", id, "][", counter2, "] cbowMode on")
+			// fmt.Println("trainModelThread[", id, "][", counter2, "] cbowMode on")
 
 			// in -> hidden
 			cw := 0
@@ -359,7 +364,7 @@ func trainModelThread(id int) {
 
 			if cw > 0 {
 
-				fmt.Println("trainModelThread[", id, "][", counter2, "] cw > 0")
+				// fmt.Println("trainModelThread[", id, "][", counter2, "] cw > 0")
 
 				for c := 0; c < layer1Size; c++ {
 					neu1[c] /= float64(cw)
@@ -367,7 +372,7 @@ func trainModelThread(id int) {
 
 				if isHierarchicalSoftmaxActivated == true {
 
-					fmt.Println("trainModelThread[", id, "][", counter2, "] isHierarchicalSoftmaxActivated")
+					// fmt.Println("trainModelThread[", id, "][", counter2, "] isHierarchicalSoftmaxActivated")
 
 					for d := 0; d < int(vocab[word].codelen); d++ {
 						f := 0.0
@@ -402,7 +407,7 @@ func trainModelThread(id int) {
 				// NEGATIVE SAMPLING
 				if numberOfNegativeExamples > 0 {
 
-					fmt.Println("trainModelThread[", id, "][", counter2, "] numberOfNegativeExamples > 0")
+					// fmt.Println("trainModelThread[", id, "][", counter2, "] numberOfNegativeExamples > 0")
 
 					var label int
 					var g float64
@@ -702,7 +707,7 @@ func initializeExpTable() {
 
 func main() {
 
-	// Word2Vec -train_file text10.txt -output_file vectors.bin -cbow  -size 200 -window 8 -negative 25 -sample 1e-4 -num_threads 1 -binary -iter 15 > a.txt
+	// Word2Vec -train_file text10.txt -output_file vectors.bin -cbow  -size 200 -window 8 -negative 25 -sample 1e-4 -num_threads 1 -iter 1 > a.txt
 
 	manageParameters()
 	initializeExpTable()
