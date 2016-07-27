@@ -75,7 +75,7 @@ func manageParameters() {
 	flag.StringVar(&readVocabFile, "read-vocab", "", "The vocabulary will be read from <file>, not constructed from the training data")
 
 	// cbow
-	flag.BoolVar(&cbowMode, "cbow", true, "Use the continuous bag of words model; default is 1 (use 0 for skip-gram model)")
+	flag.BoolVar(&cbowMode, "cbow", false, "Use the continuous bag of words model; default is 1 (use 0 for skip-gram model)")
 
 	flag.Parse()
 }
