@@ -70,7 +70,7 @@ func TestInitializeExpTable(t *testing.T) {
 
 	initializeExpTable()
 
-	var expectedExp, actualExp float64
+	var expectedExp, actualExp float32
 
 	expectedExp = 0.0024726231566347748
 	actualExp = expTable[0]

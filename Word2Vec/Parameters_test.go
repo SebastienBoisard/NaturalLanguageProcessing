@@ -1,9 +1,41 @@
 package main
 
 import (
+	"log"
 	"os"
+	"reflect"
 	"testing"
 )
+
+func compareValues(value1, value2 reflect.Value) bool {
+
+	if value1.Kind() != value2.Kind() {
+		// TODO: manage properly this kind of error
+		log.Fatal("value1 not the same type than value2")
+	}
+
+	switch value1.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return value1.Int() == value2.Int()
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return value1.Uint() == value2.Uint()
+
+	case reflect.Float32, reflect.Float64:
+		return value1.Float() == value2.Float()
+
+	case reflect.Bool:
+		return value1.Bool() == value2.Bool()
+
+	case reflect.String:
+		return value1.String() == value2.String()
+
+	default:
+		// TODO: manage properly this kind of error
+		log.Fatal("unknown type")
+	}
+	return false
+}
 
 func TestManageParameters(t *testing.T) {
 
@@ -11,82 +43,30 @@ func TestManageParameters(t *testing.T) {
 	os.Args = []string{"bin\\Word2Vec.exe", "-train_file", "text10.txt", "-output_file", "vectors.bin", "-size", "200", "-window", "8", "-sample", "1e-4",
 		"-hs", "-num_threads", "20", "-iter", "15", "-binary", "-negative", "25"}
 
-	expectedTrainFile := "text10.txt"
-	actualTrainFile := &trainFile
-
-	expectedOutputFile := "vectors.bin"
-	actualOutputFile := &outputFile
-
-	expectedCbowMode := true
-	actualCbowMode := &cbowMode
-
-	expectedLayer1Size := 200
-	actualLayer1Size := &layer1Size
-
-	expectedWindowSize := 8
-	actualWindowSize := &windowSize
-
-	expectedOccurrenceWordsThreshold := 1e-4
-	actualOccurrenceWordsThreshold := &occurrenceWordsThreshold
-
-	expectedIsHierarchicalSoftmaxActivated := true
-	actualIsHierarchicalSoftmaxActivated := &isHierarchicalSoftmaxActivated
-
-	expectedNumberOfNegativeExamples := 25
-	actualNumberOfNegativeExamples := &numberOfNegativeExamples
-
-	expectedNumberOfThreads := 20
-	actualNumberOfThreads := &numberOfThreads
-
-	expectedNumberOfIterations := 15
-	actualNumberOfIterations := &numberOfIterations
-
-	expectedBinaryMode := true
-	actualBinaryMode := &binaryMode
-
 	manageParameters()
 
-	if expectedTrainFile != *actualTrainFile {
-		t.Error("Expected", expectedTrainFile, "got", *actualTrainFile)
+	// Warning: reflect.ValueOf(...) takes the value of the parameter at the moment, so we have to use the initialization after calling manageParameters().
+	var tests = []struct {
+		parameterName  string
+		parameterValue reflect.Value
+		wantedValue    reflect.Value
+	}{
+		{"-train_file", reflect.ValueOf(trainFile), reflect.ValueOf("text10.txt")},
+		{"-output_file", reflect.ValueOf(outputFile), reflect.ValueOf("vectors.bin")},
+		{"-cbow", reflect.ValueOf(cbowMode), reflect.ValueOf(false)},
+		{"-hs", reflect.ValueOf(isHierarchicalSoftmaxActivated), reflect.ValueOf(true)},
+		{"-size", reflect.ValueOf(layer1Size), reflect.ValueOf(200)},
+		{"-window", reflect.ValueOf(windowSize), reflect.ValueOf(8)},
+		{"-sample", reflect.ValueOf(occurrenceWordsThreshold), reflect.ValueOf(1e-4)},
+		{"-negative", reflect.ValueOf(numberOfNegativeExamples), reflect.ValueOf(25)},
+		{"-num_threads", reflect.ValueOf(numberOfThreads), reflect.ValueOf(20)},
+		{"-iter", reflect.ValueOf(numberOfIterations), reflect.ValueOf(15)},
+		{"-binary", reflect.ValueOf(binaryMode), reflect.ValueOf(true)},
 	}
 
-	if expectedCbowMode != *actualCbowMode {
-		t.Error("Expected", expectedCbowMode, "got", *actualCbowMode)
-	}
-
-	if expectedOutputFile != *actualOutputFile {
-		t.Error("Expected", expectedOutputFile, "got", *actualOutputFile)
-	}
-
-	if expectedLayer1Size != *actualLayer1Size {
-		t.Error("Expected", expectedLayer1Size, "got", *actualLayer1Size)
-	}
-
-	if expectedWindowSize != *actualWindowSize {
-		t.Error("Expected", expectedWindowSize, "got", *actualWindowSize)
-	}
-
-	if expectedNumberOfNegativeExamples != *actualNumberOfNegativeExamples {
-		t.Error("Expected", expectedNumberOfNegativeExamples, "got", *actualNumberOfNegativeExamples)
-	}
-
-	if expectedIsHierarchicalSoftmaxActivated != *actualIsHierarchicalSoftmaxActivated {
-		t.Error("Expected", expectedIsHierarchicalSoftmaxActivated, "got", *actualIsHierarchicalSoftmaxActivated)
-	}
-
-	if expectedOccurrenceWordsThreshold != *actualOccurrenceWordsThreshold {
-		t.Error("Expected", expectedOccurrenceWordsThreshold, "got", *actualOccurrenceWordsThreshold)
-	}
-
-	if expectedNumberOfThreads != *actualNumberOfThreads {
-		t.Error("Expected", expectedNumberOfThreads, "got", *actualNumberOfThreads)
-	}
-
-	if expectedNumberOfIterations != *actualNumberOfIterations {
-		t.Error("Expected", expectedNumberOfIterations, "got", *actualNumberOfIterations)
-	}
-
-	if expectedBinaryMode != *actualBinaryMode {
-		t.Error("Expected", expectedBinaryMode, "got", *actualBinaryMode)
+	for _, test := range tests {
+		if compareValues(test.parameterValue, test.wantedValue) == false {
+			t.Errorf("manageParameters(\"%s %v\") = %v", test.parameterName, test.wantedValue, test.parameterValue)
+		}
 	}
 }

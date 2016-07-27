@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"log"
 	"fmt"
+	"log"
 	"math"
 	"os"
 )
@@ -169,7 +169,6 @@ func initializeNetwork() {
 		syn1neg = make([]float32, vocabSize*layer1Size)
 	}
 
-
 	for a := 0; a < vocabSize; a++ {
 		for b := 0; b < layer1Size; b++ {
 			nextRandom = nextRandom*25214903917 + 11
@@ -190,15 +189,12 @@ func initializeNetwork() {
 			// f = f / float32(layer1Size)
 			// fmt.Printf("InitNet f4=%.20f\n", f)
 
-
 			// fmt.Printf("InitNet v=%.20f\n", (((float32(nextRandom & 0xFFFF)) / float32(65536)) - float32(0.5))  / float32(layer1Size) )
 
 			syn0[a*layer1Size+b] = (((float32(nextRandom & 0xFFFF)) / float32(65536)) - float32(0.5)) / float32(layer1Size)
 
-
-
-				fmt.Printf("InitNet syn0a[%d]=%.20f\n", a * layer1Size + b, syn0[a * layer1Size + b])
-				// fmt.Printf("InitNet syn0b[%d]=%.20f\n", a * layer1Size + b, f);
+			fmt.Printf("InitNet syn0a[%d]=%.20f\n", a*layer1Size+b, syn0[a*layer1Size+b])
+			// fmt.Printf("InitNet syn0b[%d]=%.20f\n", a * layer1Size + b, f);
 
 		}
 	}
@@ -256,8 +252,8 @@ func trainModelThread(id int) {
 		// for c := 0; c < layer1Size; c++ {
 		// 	fmt.Printf("trainModelThread[ %d ][ %d ] new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 		// }
-		idx_neu1 := 1
-		fmt.Printf("trainModelThread[ %d ][ %d ] 0 new1[ %d ]= %.20f\n", id, counter2, idx_neu1, neu1[idx_neu1])
+		idxNeu1 := 1
+		fmt.Printf("trainModelThread[ %d ][ %d ] 0 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
 		if wordCount-lastWordCount > 10000 {
 			wordCountActual += wordCount - lastWordCount
@@ -306,9 +302,8 @@ func trainModelThread(id int) {
 
 					// fmt.Println("trainModelThread[", id, "] vocab[word].frequency=", vocab[word].frequency, "occurrenceWordsThreshold=", occurrenceWordsThreshold, "trainWords=", trainWords)
 
-
-					ran := float32(math.Sqrt(float64(float32(vocab[word].frequency)/(float32(occurrenceWordsThreshold)*float32(trainWords)))) + 1.0) * 
-						               (float32(occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab[word].frequency)
+					ran := float32(math.Sqrt(float64(float32(vocab[word].frequency)/(float32(occurrenceWordsThreshold)*float32(trainWords))))+1.0) *
+						(float32(occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab[word].frequency)
 					nextRandom = nextRandom*25214903917 + 11
 
 					// fmt.Println("trainModelThread[", id, "] ran=", ran)
@@ -386,16 +381,16 @@ func trainModelThread(id int) {
 						continue
 					}
 
-					fmt.Printf("trainModelThread[ %d ][ %d ] 1a new1[ %d ]= %.20f\n", id, counter2, idx_neu1, neu1[idx_neu1])
+					fmt.Printf("trainModelThread[ %d ][ %d ] 1a new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
-					fmt.Printf("trainModelThread[ %d ][ %d ] lastWord=%d syn0[%d]=%.20f\n", id, counter2, lastWord, 
-						idx_neu1+lastWord*layer1Size, syn0[idx_neu1+lastWord*layer1Size])
+					fmt.Printf("trainModelThread[ %d ][ %d ] lastWord=%d syn0[%d]=%.20f\n", id, counter2, lastWord,
+						idxNeu1+lastWord*layer1Size, syn0[idxNeu1+lastWord*layer1Size])
 
 					for c := 0; c < layer1Size; c++ {
 						neu1[c] += syn0[c+lastWord*layer1Size]
 						// fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 					}
-					fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, idx_neu1, neu1[idx_neu1])
+					fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 					cw++
 				}
 			}
@@ -408,7 +403,7 @@ func trainModelThread(id int) {
 					neu1[c] /= float32(cw)
 					fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 				}
-				fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, idx_neu1, neu1[idx_neu1])
+				fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
 				if isHierarchicalSoftmaxActivated == true {
 
@@ -493,35 +488,33 @@ func trainModelThread(id int) {
 								g = float32(label-0) * alpha
 								fmt.Printf("trainModelThread[ %d ][ %d ] negative g2=%.20f\n", id, counter2, g)
 							} else {
-								exp_idx := int((f+maxExp)*(expTableSize/maxExp/2.0))
-								g = (float32(label) - expTable[exp_idx]) * alpha
-
+								expIdx := int((f + maxExp) * (expTableSize / maxExp / 2.0))
+								g = (float32(label) - expTable[expIdx]) * alpha
 
 								//g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
 
-								// fmt.Printf("trainModelThread[ %d ][ %d ] negative maxEp=%d  expTableSize=%d  f=%.20f  exp_idx=%d  expTable[exp_idx]=%.20f\n", 
-									// id, counter2, maxExp, expTableSize, f, exp_idx, expTable[exp_idx])
+								// fmt.Printf("trainModelThread[ %d ][ %d ] negative maxEp=%d  expTableSize=%d  f=%.20f  expIdx=%d  expTable[expIdx]=%.20f\n",
+								// id, counter2, maxExp, expTableSize, f, expIdx, expTable[expIdx])
 
-								// fmt.Printf("trainModelThread[ %d ][ %d ] negative f+maxEp=%f  expTableSize/maxExp/2=%d  (f+maxExp)*(expTableSize/maxExp/2)=%f\n", 
-									// id, counter2, (f+maxExp), (expTableSize/maxExp/2), ((f+maxExp)*(expTableSize/maxExp/2)))
+								// fmt.Printf("trainModelThread[ %d ][ %d ] negative f+maxEp=%f  expTableSize/maxExp/2=%d  (f+maxExp)*(expTableSize/maxExp/2)=%f\n",
+								// id, counter2, (f+maxExp), (expTableSize/maxExp/2), ((f+maxExp)*(expTableSize/maxExp/2)))
 
-								// fmt.Printf("trainModelThread[ %d ][ %d ] negative label=%d f=%.20f maxExp=%d expTableSize=%d alpha=%.20f g3=%.20f\n", 
-									// id, counter2, label, f, maxExp, expTableSize, alpha, g)
+								// fmt.Printf("trainModelThread[ %d ][ %d ] negative label=%d f=%.20f maxExp=%d expTableSize=%d alpha=%.20f g3=%.20f\n",
+								// id, counter2, label, f, maxExp, expTableSize, alpha, g)
 								// fmt.Printf("trainModelThread[ %d ][ %d ] negative g3=%.20f\n", id, counter2, g)
 							}
 						}
-						
-						
+
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative neu1e[ %d ]= %.20f\n", id, counter2, 0, neu1e[0])
 						for c := 0; c < layer1Size; c++ {
 							neu1e[c] += g * syn1neg[c+l2]
-          				// fmt.Printf("trainModelThread[ %d ][ %d ] negative neu1e[ %d ]= %.20f\n", id, counter2, c, neu1e[c])
+							// fmt.Printf("trainModelThread[ %d ][ %d ] negative neu1e[ %d ]= %.20f\n", id, counter2, c, neu1e[c])
 						}
 
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative l2=%d g=%.20f syn1neg[ %d ]= %.20f\n", id, counter2, l2, g, l2, syn1neg[l2])
 						for c := 0; c < layer1Size; c++ {
 							syn1neg[c+l2] += g * neu1[c]
-          				// fmt.Printf("trainModelThread[ %d ][ %d ] negative syn1neg[%d]=%.20f  neu1[%d]=%.20f\n", id, counter2, c+l2, syn1neg[c+l2], c, neu1[c])
+							// fmt.Printf("trainModelThread[ %d ][ %d ] negative syn1neg[%d]=%.20f  neu1[%d]=%.20f\n", id, counter2, c+l2, syn1neg[c+l2], c, neu1[c])
 						}
 					}
 				}
@@ -773,18 +766,17 @@ func trainModel() {
 
 func initializeExpTable() {
 	for i := 0; i < expTableSize; i++ {
-		expTable[i] = float32(math.Exp(float64((float32(i)/float32(expTableSize)*2.0-1.0) * float32(maxExp)))) // Precompute the exp() table
-		// fmt.Printf("expTable1[%d]=%.20f\n", i, expTable[i])
-		expTable[i] = expTable[i] / (expTable[i] + 1)                         // Precompute f(x) = x / (x + 1)
+		expTable[i] = float32(math.Exp(float64((float32(i)/float32(expTableSize)*2.0 - 1.0) * float32(maxExp)))) // Precompute the exp() table
+		expTable[i] = expTable[i] / (expTable[i] + 1)                                                            // Precompute f(x) = x / (x + 1)
 	}
 }
 
 func main() {
 
 	// Word2Vec -train_file text10.txt -output_file vectors2.bin -cbow  -size 200 -window 8 -negative 25 -sample 1e-4 -num_threads 1 -iter 1 > a2.txt
-   // ./word2vec -train text10.txt -output vectors1.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 1 -binary 0 -iter 1 > a1.txt
+	// ./word2vec -train text10.txt -output vectors1.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 1 -binary 0 -iter 1 > a1.txt
 	manageParameters()
-	if (cbowMode == true) {
+	if cbowMode == true {
 		alpha = 0.05
 	}
 
