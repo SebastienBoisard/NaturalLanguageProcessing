@@ -20,7 +20,7 @@ const maxExp = 6
 
 const expTableSize = 1000
 
-var expTable [expTableSize + 1]float32
+var expTable []float32
 
 var startingAlpha float32
 
@@ -764,11 +764,13 @@ func trainModel() {
 	}
 }
 
-func initializeExpTable() {
+func createExpTable() []float32 {
+	expTable := make([]float32, expTableSize+1)
 	for i := 0; i < expTableSize; i++ {
 		expTable[i] = float32(math.Exp(float64((float32(i)/float32(expTableSize)*2.0 - 1.0) * float32(maxExp)))) // Precompute the exp() table
 		expTable[i] = expTable[i] / (expTable[i] + 1)                                                            // Precompute f(x) = x / (x + 1)
 	}
+	return expTable
 }
 
 func main() {
@@ -780,7 +782,7 @@ func main() {
 		alpha = 0.05
 	}
 
-	initializeExpTable()
+	expTable = createExpTable()
 	initializeVocabulary()
 	trainModel()
 

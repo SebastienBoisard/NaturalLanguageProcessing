@@ -66,38 +66,24 @@ func TestCreateBinaryTree(t *testing.T) {
 	}
 }
 
-func TestInitializeExpTable(t *testing.T) {
+func TestCreateExpTable(t *testing.T) {
 
-	initializeExpTable()
+	actualExpTable := createExpTable()
 
-	var expectedExp, actualExp float32
-
-	expectedExp = 0.0024726231566347748
-	actualExp = expTable[0]
-
-	if expectedExp != actualExp {
-		t.Error("Expected", expectedExp, "got", actualExp)
+	var tests = []struct {
+		expTableIndex int
+		wantedValue   float32
+	}{
+		{0, 0.0024726231566347748},
+		{10, 0.00278699607588350773},
+		{100, 0.00816257018595933914},
+		{999, 0.99749761819839477539},
 	}
 
-	expectedExp = 0.00278699607588350773
-	actualExp = expTable[10]
-
-	if expectedExp != actualExp {
-		t.Error("Expected", expectedExp, "got", actualExp)
-	}
-
-	expectedExp = 0.00816257018595933914
-	actualExp = expTable[100]
-
-	if expectedExp != actualExp {
-		t.Error("Expected", expectedExp, "got", actualExp)
-	}
-
-	expectedExp = 0.99749761819839477539
-	actualExp = expTable[999]
-
-	if expectedExp != actualExp {
-		t.Error("Expected", expectedExp, "got", actualExp)
+	for _, test := range tests {
+		if actualExpTable[test.expTableIndex] != test.wantedValue {
+			t.Errorf("initializeExpTable()[%d] = %f", test.expTableIndex, test.wantedValue)
+		}
 	}
 }
 
