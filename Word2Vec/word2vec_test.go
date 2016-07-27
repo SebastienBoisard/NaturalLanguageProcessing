@@ -82,88 +82,45 @@ func TestCreateExpTable(t *testing.T) {
 
 	for _, test := range tests {
 		if actualExpTable[test.expTableIndex] != test.wantedValue {
-			t.Errorf("initializeExpTable()[%d] = %f", test.expTableIndex, test.wantedValue)
+			t.Errorf("createExpTable()[%d] = %f", test.expTableIndex, test.wantedValue)
 		}
 	}
 }
 
 func TestCreateUnigramTable(t *testing.T) {
 
-	corpusFile := "text10.corpus"
+	// TODO: fill the vocabulary without reading a file
+	corpusFile := "text10.txt"
 	initializeVocabulary()
 	learnVocabFromTrainFile(corpusFile)
 	initializeNetwork()
 
-	unigramTable := createUnigramTable()
+	actualUnigramTable := createUnigramTable()
 
 	expectedUnigramTableSize := int(1e8)
-	actualUnigramTableSize := len(unigramTable)
+	actualUnigramTableSize := len(actualUnigramTable)
 
 	if actualUnigramTableSize != expectedUnigramTableSize {
 		t.Error("Expected", expectedUnigramTableSize, "got", actualUnigramTableSize)
 	}
 
-	var expectedUnigramTableValue, actualUnigramTableValue int
-	expectedUnigramTableValue = 3
-	actualUnigramTableValue = unigramTable[6889208]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	var tests = []struct {
+		unigramTableIndex int
+		wantedValue       int
+	}{
+		{6889208, 3},
+		{10564422, 5},
+		{15192095, 7},
+		{16638081, 9},
+		{18767860, 11},
+		{37003654, 41},
+		{76969030, 261},
+		{95301961, 462},
+		{99999999, 524},
 	}
-
-	expectedUnigramTableValue = 5
-	actualUnigramTableValue = unigramTable[10564422]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 7
-	actualUnigramTableValue = unigramTable[15192095]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 9
-	actualUnigramTableValue = unigramTable[16638081]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 11
-	actualUnigramTableValue = unigramTable[18767860]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 41
-	actualUnigramTableValue = unigramTable[37003654]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 261
-	actualUnigramTableValue = unigramTable[76969030]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 462
-	actualUnigramTableValue = unigramTable[95301961]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
-	}
-
-	expectedUnigramTableValue = 524
-	actualUnigramTableValue = unigramTable[99999999]
-
-	if actualUnigramTableValue != expectedUnigramTableValue {
-		t.Error("Expected", expectedUnigramTableValue, "got", actualUnigramTableValue)
+	for _, test := range tests {
+		if actualUnigramTable[test.unigramTableIndex] != test.wantedValue {
+			t.Errorf("createUnigramTable()[%d] = %d", test.unigramTableIndex, test.wantedValue)
+		}
 	}
 }
