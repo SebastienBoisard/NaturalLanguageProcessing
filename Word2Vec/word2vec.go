@@ -68,31 +68,31 @@ func createUnigramTable() []int {
 
 // createBinaryTree creates binary Huffman tree using the word counts
 // Frequent words will have short unique binary codes
-func createBinaryTree(pVocab []Term, pVocabSize int) {
+func createBinaryTree(pVocab []Term) {
 
 	var code [maxCodeLength]byte
 	var point [maxCodeLength]int
 
-	binary := make([]byte, pVocabSize*2+1)
-	parentNode := make([]int, pVocabSize*2+1)
+	binary := make([]byte, len(pVocab)*2+1)
+	parentNode := make([]int, len(pVocab)*2+1)
 
-	count := make([]int64, pVocabSize*2+1)
+	count := make([]int64, len(pVocab)*2+1)
 
-	for a := 0; a < pVocabSize; a++ {
+	for a := 0; a < len(pVocab); a++ {
 		count[a] = pVocab[a].frequency
 	}
 
-	for a := pVocabSize; a < pVocabSize*2; a++ {
+	for a := len(pVocab); a < len(pVocab)*2; a++ {
 		count[a] = 1e15
 	}
 
-	pos1 := pVocabSize - 1
-	pos2 := pVocabSize
+	pos1 := len(pVocab) - 1
+	pos2 := len(pVocab)
 
 	var min1i, min2i int
 
 	// Following algorithm constructs the Huffman tree by adding one node at a time
-	for a := 0; a < pVocabSize-1; a++ {
+	for a := 0; a < len(pVocab)-1; a++ {
 		// First, find two smallest nodes 'min1, min2'
 		if pos1 >= 0 {
 			if count[pos1] < count[pos2] {
@@ -118,13 +118,13 @@ func createBinaryTree(pVocab []Term, pVocabSize int) {
 			min2i = pos2
 			pos2++
 		}
-		count[pVocabSize+a] = count[min1i] + count[min2i]
-		parentNode[min1i] = pVocabSize + a
-		parentNode[min2i] = pVocabSize + a
+		count[len(pVocab)+a] = count[min1i] + count[min2i]
+		parentNode[min1i] = len(pVocab) + a
+		parentNode[min2i] = len(pVocab) + a
 		binary[min2i] = 1
 	}
 	// Now assign binary code to each vocabulary word
-	for a := 0; a < pVocabSize; a++ {
+	for a := 0; a < len(pVocab); a++ {
 		b := a
 		i := 0
 		for {
@@ -132,15 +132,15 @@ func createBinaryTree(pVocab []Term, pVocabSize int) {
 			point[i] = b
 			i++
 			b = parentNode[b]
-			if b == pVocabSize*2-2 {
+			if b == len(pVocab)*2-2 {
 				break
 			}
 		}
 		pVocab[a].codelen = byte(i)
-		pVocab[a].point[0] = pVocabSize - 2
+		pVocab[a].point[0] = len(pVocab) - 2
 		for b := 0; b < i; b++ {
 			pVocab[a].code[i-b-1] = code[b]
-			pVocab[a].point[i-b] = point[b] - pVocabSize
+			pVocab[a].point[i-b] = point[b] - len(pVocab)
 		}
 	}
 }
@@ -192,7 +192,7 @@ func initializeNetwork() {
 		}
 	}
 
-	createBinaryTree(vocab, vocabSize)
+	createBinaryTree(vocab)
 }
 
 func trainModelThread(id int) {

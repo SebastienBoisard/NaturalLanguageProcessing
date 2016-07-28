@@ -4,7 +4,6 @@ import "testing"
 
 func TestCreateBinaryTree(t *testing.T) {
 
-	actualVocabSize := 7
 	actualVocab := []Term{
 		{word: "</s>", frequency: 1},
 		{word: "the", frequency: 10},
@@ -15,7 +14,7 @@ func TestCreateBinaryTree(t *testing.T) {
 		{word: "that", frequency: 5},
 	}
 
-	createBinaryTree(actualVocab, actualVocabSize)
+	createBinaryTree(actualVocab)
 
 	expectedVocab := []Term{
 		{word: "</s>", frequency: 1, point: [maxCodeLength]int{5, 3, -7}, code: [maxCodeLength]byte{0, 1}, codelen: 2},
