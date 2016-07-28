@@ -36,7 +36,7 @@ var syn0, syn1, syn1neg []float32
 
 var isEndFile = false
 
-func createUnigramTable() []int {
+func createUnigramTable(pVocab []Term) []int {
 
 	const power float64 = 0.75
 
@@ -44,18 +44,20 @@ func createUnigramTable() []int {
 
 	var trainWordsPow float64
 
+	vocabSize := len(pVocab)
+
 	for a := 0; a < vocabSize; a++ {
-		trainWordsPow += math.Pow(float64(vocab[a].frequency), power)
+		trainWordsPow += math.Pow(float64(pVocab[a].frequency), power)
 	}
 
 	i := 0
 
-	d1 := math.Pow(float64(vocab[i].frequency), power) / trainWordsPow
+	d1 := math.Pow(float64(pVocab[i].frequency), power) / trainWordsPow
 	for a := 0; a < tableSize; a++ {
 		unigramTable[a] = i
 		if float64(a)/float64(tableSize) > d1 {
 			i++
-			d1 += math.Pow(float64(vocab[i].frequency), power) / trainWordsPow
+			d1 += math.Pow(float64(pVocab[i].frequency), power) / trainWordsPow
 		}
 
 		if i >= vocabSize {
@@ -659,7 +661,7 @@ func trainModel() {
 	initializeNetwork()
 
 	if numberOfNegativeExamples > 0 {
-		table = createUnigramTable()
+		table = createUnigramTable(vocab)
 	}
 
 	//start = clock();
