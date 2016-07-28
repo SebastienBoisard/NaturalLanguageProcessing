@@ -136,13 +136,13 @@ func learnVocabFromTrainFile(trainFileName string) {
 
 	sortVocab()
 
-	fmt.Println("learnVocabFromTrainFile vocabSize=", vocabSize)
-	fmt.Println("learnVocabFromTrainFile trainWords=", trainWords)
+	// fmt.Println("learnVocabFromTrainFile vocabSize=", vocabSize)
+	// fmt.Println("learnVocabFromTrainFile trainWords=", trainWords)
 }
 
 // reduceVocab reduces the vocabulary by removing infrequent words
 func reduceVocab() {
-	fmt.Println("reduceVocab BEGIN")
+	// fmt.Println("reduceVocab BEGIN")
 
 	nbWordRemoved := 0
 	for a := 0; a < vocabSize; a++ {
@@ -167,7 +167,7 @@ func reduceVocab() {
 	}
 	minReduce++
 
-	fmt.Println("reduceVocab END")
+	// fmt.Println("reduceVocab END")
 }
 
 // searchVocab returns position of a word in the vocabulary; if the word is not found, returns -1
@@ -243,7 +243,7 @@ func (s Terms) Less(i, j int) bool {
 
 // SortVocab sorts the vocabulary by frequency using word counts
 func sortVocab() {
-	fmt.Println("sortVocab BEGIN")
+	// fmt.Println("sortVocab BEGIN")
 	// Sort the vocabulary and keep </s> at the first position
 
 	// for index, currentVocab := range vocab {
@@ -283,7 +283,7 @@ func sortVocab() {
 
 	vocabSize = len(vocab)
 
-	fmt.Println("sortVocab END")
+	// fmt.Println("sortVocab END")
 
 	/*
 		//	size := vocabSize

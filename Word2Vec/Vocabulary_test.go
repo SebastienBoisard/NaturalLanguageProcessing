@@ -2,7 +2,8 @@ package main
 
 import (
 	"bufio"
-	"os"
+	"io"
+	"strings"
 	"testing"
 )
 
@@ -237,80 +238,29 @@ func TestLearnVocabFromTrainFile(t *testing.T) {
 }
 
 func TestReadWord(t *testing.T) {
-	testFile := "text11.txt"
-	f, err := os.Open(testFile)
-	if err != nil {
-		t.Error(testFile, " error", err)
-	}
-	defer f.Close()
 
-	reader := bufio.NewReader(f)
+	const input = "First second third\nFourth\n"
 
-	var expectedWord, actualWord string
-
-	expectedWord = "First"
-	actualWord, err = readWord(reader)
-
-	if err != nil {
-		t.Error("Expected nil")
+	var tests = []struct {
+		wantedWord  string
+		wantedError error
+	}{
+		{"First", nil},
+		{"second", nil},
+		{"third", nil},
+		{"</s>", nil},
+		{"Fourth", nil},
+		{"</s>", nil},
+		{"", io.EOF},
 	}
 
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
+	reader := bufio.NewReader(strings.NewReader(input))
 
-	expectedWord = "second"
-	actualWord, err = readWord(reader)
+	for _, test := range tests {
 
-	if err != nil {
-		t.Error("Expected nil")
-	}
-
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
-
-	expectedWord = "third"
-	actualWord, err = readWord(reader)
-
-	if err != nil {
-		t.Error("Expected nil")
-	}
-
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
-
-	expectedWord = "</s>"
-	actualWord, err = readWord(reader)
-
-	if err != nil {
-		t.Error("Expected nil")
-	}
-
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
-
-	expectedWord = "Fourth"
-	actualWord, err = readWord(reader)
-
-	if err != nil {
-		t.Error("Expected nil")
-	}
-
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
-	}
-
-	expectedWord = "</s>"
-	actualWord, err = readWord(reader)
-
-	if err != nil {
-		t.Error("Expected nil")
-	}
-
-	if actualWord != expectedWord {
-		t.Error("Expected", expectedWord, "got", actualWord)
+		actualWord, actualErr := readWord(reader)
+		if actualErr != test.wantedError || actualWord != test.wantedWord {
+			t.Errorf("readWord(\"%s\", %v) = \"%s\", %v", test.wantedWord, test.wantedError, actualWord, actualErr)
+		}
 	}
 }

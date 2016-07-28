@@ -193,7 +193,7 @@ func initializeNetwork() {
 
 			syn0[a*layer1Size+b] = (((float32(nextRandom & 0xFFFF)) / float32(65536)) - float32(0.5)) / float32(layer1Size)
 
-			fmt.Printf("InitNet syn0a[%d]=%.20f\n", a*layer1Size+b, syn0[a*layer1Size+b])
+			// fmt.Printf("InitNet syn0a[%d]=%.20f\n", a*layer1Size+b, syn0[a*layer1Size+b])
 			// fmt.Printf("InitNet syn0b[%d]=%.20f\n", a * layer1Size + b, f);
 
 		}
