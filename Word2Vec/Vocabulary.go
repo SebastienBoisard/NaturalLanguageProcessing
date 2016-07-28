@@ -73,7 +73,7 @@ func learnVocabFromTrainFile(trainFileName string) {
 		word, err := readWord(reader)
 
 		if err != nil {
-			fmt.Println("learnVocabFromTrainFile [", counter, "] break err=", err)
+			//fmt.Println("learnVocabFromTrainFile [", counter, "] break err=", err)
 			break
 		}
 
