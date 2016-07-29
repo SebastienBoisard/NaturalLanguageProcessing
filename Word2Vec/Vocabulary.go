@@ -191,11 +191,6 @@ func searchVocab(word string) int {
 // addWordToVocab adds a word to the vocabulary
 // addWordToVocab returns the position of the new word in the vocabulary
 func addWordToVocab(word string) int {
-	wordLength := len(word) + 1
-
-	if wordLength > maxString {
-		wordLength = maxString
-	}
 
 	vocab = append(vocab, Term{word: word, frequency: 0})
 	vocabSize++
@@ -291,7 +286,7 @@ func sortVocab() {
 		for a := len(vocab)-1; a > 0; a-- {
 			fmt.Println("sortVocab vocab=", currentVocab.word)
 			//	for a := 0; a < size; a++ {
-			// Words occuring less than minCount times will be discarded from the vocab
+			// Words occurring less than minCount times will be discarded from the vocab
 			if vocab[a].frequency < minCount && a != 0 {
 				fmt.Print("------- begin remove vocab:", vocab[a])
 				vocab = append(vocab[:a], vocab[a+1:]...)

@@ -99,7 +99,7 @@ func TestCreateUnigramTable(t *testing.T) {
 	actualUnigramTableSize := len(actualUnigramTable)
 
 	if actualUnigramTableSize != expectedUnigramTableSize {
-		t.Error("createUnigramTable().len(%d) = %d", expectedUnigramTableSize, actualUnigramTableSize)
+		t.Errorf("createUnigramTable().len(%d) = %d", expectedUnigramTableSize, actualUnigramTableSize)
 	}
 
 	var tests = []struct {
