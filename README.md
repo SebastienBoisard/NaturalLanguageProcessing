@@ -3,7 +3,7 @@
 
 
 [![Build Status](https://travis-ci.org/SebastienBoisard/NaturalLanguageProcessing.svg?branch=master)](https://travis-ci.org/SebastienBoisard/NaturalLanguageProcessing)
-[![codecov.io](https://codecov.io/github/SebastienBoisard/NaturalLanguageProcessing/coverage.svg?branch=master)](https://codecov.io/github/SebastienBoisard/NaturalLanguageProcessing?branch=master)
+[![codecov](https://codecov.io/gh/SebastienBoisard/NaturalLanguageProcessing/branch/master/graph/badge.svg)](https://codecov.io/gh/SebastienBoisard/NaturalLanguageProcessing)
 [![Report card](https://goreportcard.com/badge/github.com/SebastienBoisard/NaturalLanguageProcessing)](https://goreportcard.com/report/github.com/SebastienBoisard/NaturalLanguageProcessing)
 
 
