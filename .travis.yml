@@ -3,5 +3,8 @@ language: go
 go:
   - 1.6
 
+
+script: go test -race -v ./...
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
