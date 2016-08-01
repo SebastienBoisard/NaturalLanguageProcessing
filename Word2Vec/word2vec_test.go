@@ -123,3 +123,25 @@ func TestCreateUnigramTable(t *testing.T) {
 		}
 	}
 }
+
+func TestTrainModel(t *testing.T) {
+	if cbowMode == true {
+		alpha = 0.05
+	}
+
+	expTable = createExpTable()
+	initializeVocabulary()
+
+	startingAlpha = float32(startingLearningRate)
+
+	learnVocabFromTrainFile(trainFile)
+
+	initializeNetwork()
+
+	if numberOfNegativeExamples > 0 {
+		table = createUnigramTable(vocab)
+	}
+
+	trainModel()
+
+}
