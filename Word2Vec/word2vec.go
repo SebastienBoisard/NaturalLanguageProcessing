@@ -225,7 +225,7 @@ func trainModelThread(id int) {
 		// for c := 0; c < layer1Size; c++ {
 		// 	fmt.Printf("trainModelThread[ %d ][ %d ] new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 		// }
-		idxNeu1 := 1
+		// idxNeu1 := 1
 		// fmt.Printf("trainModelThread[ %d ][ %d ] 0 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
 		if wordCount-lastWordCount > 10000 {
@@ -363,7 +363,7 @@ func trainModelThread(id int) {
 						neu1[c] += syn0[c+lastWord*layer1Size]
 						// fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 					}
-					fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
+					// fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 					cw++
 				}
 			}
@@ -374,9 +374,9 @@ func trainModelThread(id int) {
 
 				for c := 0; c < layer1Size; c++ {
 					neu1[c] /= float32(cw)
-					fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
+					// fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 				}
-				fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
+				// fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
 				if isHierarchicalSoftmaxActivated == true {
 
@@ -399,12 +399,12 @@ func trainModelThread(id int) {
 							}
 						}
 
-						fmt.Printf("trainModelThread[ %d ][ %d ] hs f=%.20f\n", id, counter2, f)
+						// fmt.Printf("trainModelThread[ %d ][ %d ] hs f=%.20f\n", id, counter2, f)
 
 						// 'g' is the gradient multiplied by the learning rate
 						g := float32(1.0-float32(vocab[word].code[d])-f) * alpha
 
-						fmt.Printf("trainModelThread[ %d ][ %d ] hs g=%.20f\n", id, counter2, g)
+						// fmt.Printf("trainModelThread[ %d ][ %d ] hs g=%.20f\n", id, counter2, g)
 
 						// Propagate errors output -> hidden
 						for c := 0; c < layer1Size; c++ {
@@ -443,7 +443,7 @@ func trainModelThread(id int) {
 							label = 0
 						}
 						l2 := target * layer1Size
-						fmt.Printf("trainModelThread[ %d ][ %d ] negative l2=%d\n", id, counter2, l2)
+						// fmt.Printf("trainModelThread[ %d ][ %d ] negative l2=%d\n", id, counter2, l2)
 
 						f := float32(0.0)
 						for c := 0; c < layer1Size; c++ {
@@ -451,15 +451,15 @@ func trainModelThread(id int) {
 							// fmt.Printf("trainModelThread[ %d ][ %d ] negative f[%d]=%.20f  neu1[%d]=%.20f  syn1neg[%d]=%.20f   neu1[%d]*syn1neg[%d]=%.20f\n", id, counter2, c, f, c, neu1[c], c+l2, syn1neg[c+l2], c, c+l2, neu1[c] * syn1neg[c+l2])
 						}
 
-						fmt.Printf("trainModelThread[ %d ][ %d ] negative f=%.20f\n", id, counter2, f)
+						// fmt.Printf("trainModelThread[ %d ][ %d ] negative f=%.20f\n", id, counter2, f)
 
 						if f > maxExp {
 							g = float32(label-1) * alpha
-							fmt.Printf("trainModelThread[ %d ][ %d ] negative g1=%.20f\n", id, counter2, g)
+							// fmt.Printf("trainModelThread[ %d ][ %d ] negative g1=%.20f\n", id, counter2, g)
 						} else {
 							if f < -maxExp {
 								g = float32(label-0) * alpha
-								fmt.Printf("trainModelThread[ %d ][ %d ] negative g2=%.20f\n", id, counter2, g)
+								// fmt.Printf("trainModelThread[ %d ][ %d ] negative g2=%.20f\n", id, counter2, g)
 							} else {
 								expIdx := int((f + maxExp) * (expTableSize / maxExp / 2.0))
 								g = (float32(label) - expTable[expIdx]) * alpha
@@ -496,7 +496,7 @@ func trainModelThread(id int) {
 				for a := int(b); a < int(windowSize)*2+1-int(b); a++ {
 					if a != int(windowSize) {
 						c := sentencePosition - windowSize + a
-						fmt.Printf("trainModelThread[ %d ][ %d ] hidden a=%d c=%d\n", id, counter2, a, c)
+						// fmt.Printf("trainModelThread[ %d ][ %d ] hidden a=%d c=%d\n", id, counter2, a, c)
 						if c < 0 {
 							continue
 						}
@@ -516,7 +516,7 @@ func trainModelThread(id int) {
 		} else {
 			//train skip-gram
 
-			fmt.Println("trainModelThread[", id, "] skip-gram")
+			// fmt.Println("trainModelThread[", id, "] skip-gram")
 
 			for a := b; a < windowSize*2+1-b; a++ {
 				if a != windowSize {
