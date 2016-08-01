@@ -38,7 +38,7 @@ var syn0, syn1, syn1neg []float32
 
 var isEndFile = false
 
-func createUnigramTable(pVocab []Term) []int {
+func createUnigramTable(vocabArray []Term) []int {
 
 	const power float64 = 0.75
 
@@ -46,20 +46,20 @@ func createUnigramTable(pVocab []Term) []int {
 
 	var trainWordsPow float64
 
-	vocabSize := len(pVocab)
+	vocabSize := len(vocabArray)
 
 	for a := 0; a < vocabSize; a++ {
-		trainWordsPow += math.Pow(float64(pVocab[a].frequency), power)
+		trainWordsPow += math.Pow(float64(vocabArray[a].frequency), power)
 	}
 
 	i := 0
 
-	d1 := math.Pow(float64(pVocab[i].frequency), power) / trainWordsPow
+	d1 := math.Pow(float64(vocabArray[i].frequency), power) / trainWordsPow
 	for a := 0; a < tableSize; a++ {
 		unigramTable[a] = i
 		if float64(a)/float64(tableSize) > d1 {
 			i++
-			d1 += math.Pow(float64(pVocab[i].frequency), power) / trainWordsPow
+			d1 += math.Pow(float64(vocabArray[i].frequency), power) / trainWordsPow
 		}
 
 		if i >= vocabSize {
@@ -72,31 +72,31 @@ func createUnigramTable(pVocab []Term) []int {
 
 // createBinaryTree creates binary Huffman tree using the word counts
 // Frequent words will have short unique binary codes
-func createBinaryTree(pVocab []Term) {
+func createBinaryTree(vocabArray []Term) {
 
 	var code [maxCodeLength]byte
 	var point [maxCodeLength]int
 
-	binary := make([]byte, len(pVocab)*2+1)
-	parentNode := make([]int, len(pVocab)*2+1)
+	binary := make([]byte, len(vocabArray)*2+1)
+	parentNode := make([]int, len(vocabArray)*2+1)
 
-	count := make([]int64, len(pVocab)*2+1)
+	count := make([]int64, len(vocabArray)*2+1)
 
-	for a := 0; a < len(pVocab); a++ {
-		count[a] = pVocab[a].frequency
+	for a := 0; a < len(vocabArray); a++ {
+		count[a] = vocabArray[a].frequency
 	}
 
-	for a := len(pVocab); a < len(pVocab)*2; a++ {
+	for a := len(vocabArray); a < len(vocabArray)*2; a++ {
 		count[a] = 1e15
 	}
 
-	pos1 := len(pVocab) - 1
-	pos2 := len(pVocab)
+	pos1 := len(vocabArray) - 1
+	pos2 := len(vocabArray)
 
 	var min1i, min2i int
 
 	// Following algorithm constructs the Huffman tree by adding one node at a time
-	for a := 0; a < len(pVocab)-1; a++ {
+	for a := 0; a < len(vocabArray)-1; a++ {
 		// First, find two smallest nodes 'min1, min2'
 		if pos1 >= 0 {
 			if count[pos1] < count[pos2] {
@@ -122,13 +122,13 @@ func createBinaryTree(pVocab []Term) {
 			min2i = pos2
 			pos2++
 		}
-		count[len(pVocab)+a] = count[min1i] + count[min2i]
-		parentNode[min1i] = len(pVocab) + a
-		parentNode[min2i] = len(pVocab) + a
+		count[len(vocabArray)+a] = count[min1i] + count[min2i]
+		parentNode[min1i] = len(vocabArray) + a
+		parentNode[min2i] = len(vocabArray) + a
 		binary[min2i] = 1
 	}
 	// Now assign binary code to each vocabulary word
-	for a := 0; a < len(pVocab); a++ {
+	for a := 0; a < len(vocabArray); a++ {
 		b := a
 		i := 0
 		for {
@@ -136,20 +136,20 @@ func createBinaryTree(pVocab []Term) {
 			point[i] = b
 			i++
 			b = parentNode[b]
-			if b == len(pVocab)*2-2 {
+			if b == len(vocabArray)*2-2 {
 				break
 			}
 		}
-		pVocab[a].codelen = byte(i)
-		pVocab[a].point[0] = len(pVocab) - 2
+		vocabArray[a].codelen = byte(i)
+		vocabArray[a].point[0] = len(vocabArray) - 2
 		for b := 0; b < i; b++ {
-			pVocab[a].code[i-b-1] = code[b]
-			pVocab[a].point[i-b] = point[b] - len(pVocab)
+			vocabArray[a].code[i-b-1] = code[b]
+			vocabArray[a].point[i-b] = point[b] - len(vocabArray)
 		}
 	}
 }
 
-func initializeNetwork() {
+func initializeNetwork(vocabSize int, layer1Size int) {
 
 	syn0 = make([]float32, vocabSize*layer1Size)
 
@@ -172,10 +172,9 @@ func initializeNetwork() {
 		}
 	}
 
-	createBinaryTree(vocab)
 }
 
-func trainModelThread(id int) {
+func trainModelThread(id int, vocab Vocab) {
 
 	// fmt.Println("trainModelThread[", id, "] BEGIN")
 
@@ -247,7 +246,7 @@ func trainModelThread(id int) {
 			counter := 0
 			for {
 				counter++
-				word := readWordIndex(reader)
+				word := vocab.readWordIndex(reader)
 
 				// if word > 0 {
 				// 	fmt.Println("trainModelThread[", id, "][", counter2, "][", counter, "] word=", vocab[word].word, " (", word, ")")
@@ -275,8 +274,8 @@ func trainModelThread(id int) {
 
 					// fmt.Println("trainModelThread[", id, "] vocab[word].frequency=", vocab[word].frequency, "occurrenceWordsThreshold=", occurrenceWordsThreshold, "trainWords=", trainWords)
 
-					ran := float32(math.Sqrt(float64(float32(vocab[word].frequency)/(float32(occurrenceWordsThreshold)*float32(trainWords))))+1.0) *
-						(float32(occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab[word].frequency)
+					ran := float32(math.Sqrt(float64(float32(vocab.vocabArray[word].frequency)/(float32(occurrenceWordsThreshold)*float32(trainWords))))+1.0) *
+						(float32(occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab.vocabArray[word].frequency)
 					nextRandom = nextRandom*25214903917 + 11
 
 					// fmt.Println("trainModelThread[", id, "] ran=", ran)
@@ -382,9 +381,9 @@ func trainModelThread(id int) {
 
 					// fmt.Println("trainModelThread[", id, "][", counter2, "] isHierarchicalSoftmaxActivated")
 
-					for d := 0; d < int(vocab[word].codelen); d++ {
+					for d := 0; d < int(vocab.vocabArray[word].codelen); d++ {
 						f := float32(0.0)
-						l2 := vocab[word].point[d] * layer1Size
+						l2 := vocab.vocabArray[word].point[d] * layer1Size
 						// Propagate hidden -> output
 						for c := 0; c < layer1Size; c++ {
 							f += neu1[c] * syn1[c+l2]
@@ -402,7 +401,7 @@ func trainModelThread(id int) {
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hs f=%.20f\n", id, counter2, f)
 
 						// 'g' is the gradient multiplied by the learning rate
-						g := float32(1.0-float32(vocab[word].code[d])-f) * alpha
+						g := float32(1.0-float32(vocab.vocabArray[word].code[d])-f) * alpha
 
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hs g=%.20f\n", id, counter2, g)
 
@@ -435,7 +434,7 @@ func trainModelThread(id int) {
 							// fmt.Println("trainModelThread[", id, "] nextRandom=", nextRandom, "(nextRandom>>16)%tableSize=", (nextRandom>>16)%tableSize)
 							target = table[(nextRandom>>16)%tableSize]
 							if target == 0 {
-								target = int(nextRandom%uint64(vocabSize-1)) + 1
+								target = int(nextRandom%uint64(vocab.vocabSize-1)) + 1
 							}
 							if target == word {
 								continue
@@ -537,9 +536,9 @@ func trainModelThread(id int) {
 					}
 					// HIERARCHICAL SOFTMAX
 					if isHierarchicalSoftmaxActivated == true {
-						for d := 0; d < int(vocab[word].codelen); d++ {
+						for d := 0; d < int(vocab.vocabArray[word].codelen); d++ {
 							f := float32(0.0)
-							l2 := vocab[word].point[d] * layer1Size
+							l2 := vocab.vocabArray[word].point[d] * layer1Size
 							// Propagate hidden -> output
 							for c := 0; c < layer1Size; c++ {
 								f += syn0[c+l1] * syn1[c+l2]
@@ -556,7 +555,7 @@ func trainModelThread(id int) {
 							}
 
 							// 'g' is the gradient multiplied by the learning rate
-							g := (1 - float32(vocab[word].code[d]) - f) * alpha
+							g := (1 - float32(vocab.vocabArray[word].code[d]) - f) * alpha
 							// Propagate errors output -> hidden
 							for c := 0; c < layer1Size; c++ {
 								neu1e[c] += g * syn1[c+l2]
@@ -578,7 +577,7 @@ func trainModelThread(id int) {
 								nextRandom = nextRandom*25214903917 + 11
 								target = table[(nextRandom>>16)%tableSize]
 								if target == 0 {
-									target = int(nextRandom%uint64(vocabSize-1)) + 1
+									target = int(nextRandom%uint64(vocab.vocabSize-1)) + 1
 								}
 								if target == word {
 									continue
@@ -625,15 +624,15 @@ func trainModelThread(id int) {
 	}
 }
 
-func trainModel() {
+func trainModel(vocab Vocab) {
 
-	trainModelThread(0)
+	trainModelThread(0, vocab)
 
 	//for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainModelThread, (void *)a);
 	//for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
 }
 
-func saveData(outputFileName string) {
+func saveData(outputFileName string, vocab Vocab) {
 	file, err := os.Create(outputFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -641,17 +640,17 @@ func saveData(outputFileName string) {
 	defer file.Close()
 
 	if numberOfClasses == 0 {
-		saveWordsAsVectors(file, vocab, vocabSize, syn0)
+		saveWordsAsVectors(file, vocab, syn0)
 	} else {
-		saveWordsAsClasses(file, vocab, vocabSize, syn0)
+		saveWordsAsClasses(file, vocab, syn0)
 	}
 }
 
-func saveWordsAsVectors(output io.Writer, vocab []Term, vocabSize int, syn0 []float32) {
+func saveWordsAsVectors(output io.Writer, vocab Vocab, syn0 []float32) {
 	// Save the word vectors
-	fmt.Fprintf(output, "%d %d\n", vocabSize, layer1Size)
-	for a := 0; a < vocabSize; a++ {
-		fmt.Fprintf(output, "%s ", vocab[a].word)
+	fmt.Fprintf(output, "%d %d\n", vocab.vocabSize, layer1Size)
+	for a := 0; a < vocab.vocabSize; a++ {
+		fmt.Fprintf(output, "%s ", vocab.vocabArray[a].word)
 		if binaryMode == true {
 			for b := 0; b < layer1Size; b++ {
 				binary.Write(output, binary.LittleEndian, syn0[a*layer1Size+b])
@@ -665,7 +664,7 @@ func saveWordsAsVectors(output io.Writer, vocab []Term, vocabSize int, syn0 []fl
 	}
 }
 
-func saveWordsAsClasses(output io.Writer, vocab []Term, vocabSize int, syn0 []float32) {
+func saveWordsAsClasses(output io.Writer, vocab Vocab, syn0 []float32) {
 	// Run K-means on the word vectors
 	// int clcn = classes, iter = 10, closeid;
 
@@ -674,11 +673,11 @@ func saveWordsAsClasses(output io.Writer, vocab []Term, vocabSize int, syn0 []fl
 	var closeid int
 
 	var closev, x float32
-	cl := make([]int, vocabSize)
+	cl := make([]int, vocab.vocabSize)
 	centcn := make([]int, numberOfClasses)
 	cent := make([]float32, numberOfClasses*layer1Size)
 
-	for a := 0; a < vocabSize; a++ {
+	for a := 0; a < vocab.vocabSize; a++ {
 		cl[a] = a % clcn
 	}
 
@@ -689,7 +688,7 @@ func saveWordsAsClasses(output io.Writer, vocab []Term, vocabSize int, syn0 []fl
 		for b := 0; b < clcn; b++ {
 			centcn[b] = 1
 		}
-		for c := 0; c < vocabSize; c++ {
+		for c := 0; c < vocab.vocabSize; c++ {
 			for d := 0; d < layer1Size; d++ {
 				cent[layer1Size*cl[c]+d] += syn0[c*layer1Size+d]
 			}
@@ -706,7 +705,7 @@ func saveWordsAsClasses(output io.Writer, vocab []Term, vocabSize int, syn0 []fl
 				cent[layer1Size*b+c] /= closev
 			}
 		}
-		for c := 0; c < vocabSize; c++ {
+		for c := 0; c < vocab.vocabSize; c++ {
 			closev = -10
 			closeid = 0
 			for d := 0; d < clcn; d++ {
@@ -724,8 +723,8 @@ func saveWordsAsClasses(output io.Writer, vocab []Term, vocabSize int, syn0 []fl
 	}
 
 	// Save the K-means classes
-	for a := 0; a < vocabSize; a++ {
-		fmt.Fprintf(output, "%s %d\n", vocab[a].word, cl[a])
+	for a := 0; a < vocab.vocabSize; a++ {
+		fmt.Fprintf(output, "%s %d\n", vocab.vocabArray[a].word, cl[a])
 	}
 }
 
@@ -749,19 +748,22 @@ func main() {
 	}
 
 	expTable = createExpTable()
-	initializeVocabulary()
+
+	vocab := initializeVocab()
 
 	startingAlpha = float32(startingLearningRate)
 
-	learnVocabFromTrainFile(trainFile)
+	vocab.learnVocab(trainFile)
 
-	initializeNetwork()
+	initializeNetwork(vocab.vocabSize, layer1Size)
+
+	createBinaryTree(vocab.vocabArray)
 
 	if numberOfNegativeExamples > 0 {
-		table = createUnigramTable(vocab)
+		table = createUnigramTable(vocab.vocabArray)
 	}
 
-	trainModel()
+	trainModel(vocab)
 
-	saveData(outputFile)
+	saveData(outputFile, vocab)
 }

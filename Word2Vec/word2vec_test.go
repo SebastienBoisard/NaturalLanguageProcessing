@@ -150,22 +150,22 @@ func TestTrainModel(t *testing.T) {
 	}
 
 	expTable = createExpTable()
-	initializeVocabulary()
+	vocab := initializeVocab()
 
 	startingAlpha = float32(startingLearningRate)
 
-	learnVocabFromTrainFile(trainFile)
+	vocab.learnVocab(trainFile)
 
-	initializeNetwork()
+	initializeNetwork(vocab.vocabSize, layer1Size)
 
 	if numberOfNegativeExamples > 0 {
-		table = createUnigramTable(vocab)
+		table = createUnigramTable(vocab.vocabArray)
 	}
 
-	trainModel()
+	trainModel(vocab)
 
 	expectedVocabSize := 525
-	actualVocabSize := vocabSize
+	actualVocabSize := vocab.vocabSize
 
 	if expectedVocabSize != actualVocabSize {
 		t.Errorf("trainModel().vocabSize(%d) = %d", expectedVocabSize, actualVocabSize)
@@ -710,8 +710,8 @@ func TestTrainModel(t *testing.T) {
 	}
 
 	for wordIndex, test := range tests {
-		if vocab[wordIndex].word != test.wantedWord {
-			t.Errorf("trainModel().word[%d](%s) = %d", wordIndex, test.wantedWord, vocab[wordIndex].word)
+		if vocab.vocabArray[wordIndex].word != test.wantedWord {
+			t.Errorf("trainModel().word[%d](%s) = %d", wordIndex, test.wantedWord, vocab.vocabArray[wordIndex].word)
 		}
 
 		for valueIndex, testValue := range test.wantedValues {
