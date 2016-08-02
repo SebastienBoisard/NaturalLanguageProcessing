@@ -22,14 +22,6 @@ const maxString = 100
 // vocabMaxSize can be changed
 var vocabMaxSize = 1000
 
-//var vocab []Term
-
-//var vocabHash []int
-
-//var vocabSize int
-
-//var minReduce int64
-
 var minCount = int64(5)
 
 func (term Term) String() string {

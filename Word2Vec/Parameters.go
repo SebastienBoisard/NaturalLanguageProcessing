@@ -14,7 +14,7 @@ var numberOfNegativeExamples int
 var numberOfThreads int
 var numberOfIterations int
 var minWordOccurrencesThreshold int
-var startingLearningRate float64
+var startingLearningRate float32
 var numberOfClasses int
 var debugMode int
 var binaryMode bool
@@ -57,7 +57,9 @@ func manageParameters() {
 	flag.IntVar(&minWordOccurrencesThreshold, "min-count", 5, "This will discard words that appear less than <int> times; default is 5")
 
 	// alpha
-	flag.Float64Var(&startingLearningRate, "alpha", 0.025, "Set the starting learning rate; default is 0.025 for skip-gram and 0.05 for CBOW")
+	var startingLearningRate64 float64
+	flag.Float64Var(&startingLearningRate64, "alpha", 0.025, "Set the starting learning rate; default is 0.025 for skip-gram and 0.05 for CBOW")
+	startingLearningRate = float32(startingLearningRate64)
 
 	// classes
 	flag.IntVar(&numberOfClasses, "classes", 0, "Output word classes rather than word vectors; default number of classes is 0 (vectors are written)")

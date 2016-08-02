@@ -24,13 +24,11 @@ const expTableSize = 1000
 
 var expTable []float32
 
-var startingAlpha float32
-
 var fileSize int
 
 var wordCountActual = 0
 
-var alpha = float32(0.025)
+var learningRate = float32(0.025)
 
 var trainWords int
 
@@ -176,15 +174,6 @@ func initializeNetwork(vocabSize int, layer1Size int) {
 
 func trainModelThread(id int, vocab Vocab) {
 
-	// fmt.Println("trainModelThread[", id, "] BEGIN")
-
-	//  long long a, b, d, cw, word, last_word, sentenceLength = 0, sentencePosition = 0;
-	//long long wordCount = 0, lastWordCount = 0, sen[maxSentenceLength + 1];
-	//long long l1, l2, c, target, label, local_iter = iter;
-	//real f, g;
-	//	var cw int
-	//	var g float32
-
 	var label int
 	var target int
 
@@ -210,7 +199,7 @@ func trainModelThread(id int, vocab Vocab) {
 	fi.Seek(filePosition, 0)
 
 	// fmt.Println("trainModelThread[", id, "] numberOfThreads=", numberOfThreads, "filePosition=", filePosition)
-	// fmt.Printf("trainModelThread[ %d ] alpha= %.20f\n", id, alpha)
+	// fmt.Printf("trainModelThread[ %d ] learningRate= %.20f\n", id, learningRate)
 
 	reader := bufio.NewReader(fi)
 
@@ -231,11 +220,11 @@ func trainModelThread(id int, vocab Vocab) {
 			wordCountActual += wordCount - lastWordCount
 			lastWordCount = wordCount
 
-			fmt.Printf("%cAlpha: %f  Progress: %.2f%%\n", 13, alpha, float32(wordCountActual)/float32(numberOfIterations*trainWords+1)*100)
-			alpha = float32(startingAlpha * (1 - float32(wordCountActual)/float32(numberOfIterations*trainWords+1)))
+			fmt.Printf("%clearningRate: %f  Progress: %.2f%%\n", 13, learningRate, float32(wordCountActual)/float32(numberOfIterations*trainWords+1)*100)
+			learningRate = float32(startingLearningRate * (1 - float32(wordCountActual)/float32(numberOfIterations*trainWords+1)))
 
-			if alpha < startingAlpha*0.0001 {
-				alpha = startingAlpha * 0.0001
+			if learningRate < startingLearningRate*0.0001 {
+				learningRate = startingLearningRate * 0.0001
 			}
 		}
 
@@ -401,7 +390,7 @@ func trainModelThread(id int, vocab Vocab) {
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hs f=%.20f\n", id, counter2, f)
 
 						// 'g' is the gradient multiplied by the learning rate
-						g := float32(1.0-float32(vocab.vocabArray[word].code[d])-f) * alpha
+						g := float32(1.0-float32(vocab.vocabArray[word].code[d])-f) * learningRate
 
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hs g=%.20f\n", id, counter2, g)
 
@@ -453,17 +442,17 @@ func trainModelThread(id int, vocab Vocab) {
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative f=%.20f\n", id, counter2, f)
 
 						if f > maxExp {
-							g = float32(label-1) * alpha
+							g = float32(label-1) * learningRate
 							// fmt.Printf("trainModelThread[ %d ][ %d ] negative g1=%.20f\n", id, counter2, g)
 						} else {
 							if f < -maxExp {
-								g = float32(label-0) * alpha
+								g = float32(label-0) * learningRate
 								// fmt.Printf("trainModelThread[ %d ][ %d ] negative g2=%.20f\n", id, counter2, g)
 							} else {
 								expIdx := int((f + maxExp) * (expTableSize / maxExp / 2.0))
-								g = (float32(label) - expTable[expIdx]) * alpha
+								g = (float32(label) - expTable[expIdx]) * learningRate
 
-								//g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
+								//g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * learningRate;
 
 								// fmt.Printf("trainModelThread[ %d ][ %d ] negative maxEp=%d  expTableSize=%d  f=%.20f  expIdx=%d  expTable[expIdx]=%.20f\n",
 								// id, counter2, maxExp, expTableSize, f, expIdx, expTable[expIdx])
@@ -471,8 +460,8 @@ func trainModelThread(id int, vocab Vocab) {
 								// fmt.Printf("trainModelThread[ %d ][ %d ] negative f+maxEp=%f  expTableSize/maxExp/2=%d  (f+maxExp)*(expTableSize/maxExp/2)=%f\n",
 								// id, counter2, (f+maxExp), (expTableSize/maxExp/2), ((f+maxExp)*(expTableSize/maxExp/2)))
 
-								// fmt.Printf("trainModelThread[ %d ][ %d ] negative label=%d f=%.20f maxExp=%d expTableSize=%d alpha=%.20f g3=%.20f\n",
-								// id, counter2, label, f, maxExp, expTableSize, alpha, g)
+								// fmt.Printf("trainModelThread[ %d ][ %d ] negative label=%d f=%.20f maxExp=%d expTableSize=%d learningRate=%.20f g3=%.20f\n",
+								// id, counter2, label, f, maxExp, expTableSize, learningRate, g)
 								// fmt.Printf("trainModelThread[ %d ][ %d ] negative g3=%.20f\n", id, counter2, g)
 							}
 						}
@@ -555,7 +544,7 @@ func trainModelThread(id int, vocab Vocab) {
 							}
 
 							// 'g' is the gradient multiplied by the learning rate
-							g := (1 - float32(vocab.vocabArray[word].code[d]) - f) * alpha
+							g := (1 - float32(vocab.vocabArray[word].code[d]) - f) * learningRate
 							// Propagate errors output -> hidden
 							for c := 0; c < layer1Size; c++ {
 								neu1e[c] += g * syn1[c+l2]
@@ -591,12 +580,12 @@ func trainModelThread(id int, vocab Vocab) {
 								f += syn0[c+l1] * syn1neg[c+l2]
 							}
 							if f > maxExp {
-								g = float32(label-1) * alpha
+								g = float32(label-1) * learningRate
 							} else {
 								if f < -maxExp {
-									g = float32(label-0) * alpha
+									g = float32(label-0) * learningRate
 								} else {
-									g = float32(float32(label)-expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * alpha
+									g = float32(float32(label)-expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * learningRate
 								}
 							}
 							for c := 0; c < layer1Size; c++ {
@@ -744,14 +733,12 @@ func main() {
 	manageParameters()
 
 	if cbowMode == true {
-		alpha = 0.05
+		learningRate = 0.05
 	}
 
 	expTable = createExpTable()
 
 	vocab := initializeVocab()
-
-	startingAlpha = float32(startingLearningRate)
 
 	vocab.learnVocab(trainFile)
 

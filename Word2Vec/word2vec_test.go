@@ -146,13 +146,11 @@ func TestTrainModel(t *testing.T) {
 	cbowMode = true
 
 	if cbowMode == true {
-		alpha = 0.05
+		learningRate = 0.05
 	}
 
 	expTable = createExpTable()
 	vocab := initializeVocab()
-
-	startingAlpha = float32(startingLearningRate)
 
 	vocab.learnVocab(trainFile)
 
