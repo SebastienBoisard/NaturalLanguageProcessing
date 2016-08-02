@@ -43,7 +43,7 @@ func TestManageParameters(t *testing.T) {
 	os.Args = []string{"bin\\Word2Vec.exe", "-train_file", "text10.txt", "-output_file", "vectors.bin", "-size", "200", "-window", "8", "-sample", "1e-4",
 		"-hs", "-num_threads", "20", "-iter", "15", "-binary", "-negative", "25"}
 
-	manageParameters()
+	actualParameters := manageParameters()
 
 	// Warning: reflect.ValueOf(...) takes the value of the parameter at the moment, so we have to use the initialization after calling manageParameters().
 	var tests = []struct {
@@ -51,17 +51,17 @@ func TestManageParameters(t *testing.T) {
 		parameterValue reflect.Value
 		wantedValue    reflect.Value
 	}{
-		{"-train_file", reflect.ValueOf(trainFile), reflect.ValueOf("text10.txt")},
-		{"-output_file", reflect.ValueOf(outputFile), reflect.ValueOf("vectors.bin")},
-		{"-cbow", reflect.ValueOf(cbowMode), reflect.ValueOf(false)},
-		{"-hs", reflect.ValueOf(isHierarchicalSoftmaxActivated), reflect.ValueOf(true)},
-		{"-size", reflect.ValueOf(layer1Size), reflect.ValueOf(200)},
-		{"-window", reflect.ValueOf(windowSize), reflect.ValueOf(8)},
-		{"-sample", reflect.ValueOf(occurrenceWordsThreshold), reflect.ValueOf(1e-4)},
-		{"-negative", reflect.ValueOf(numberOfNegativeExamples), reflect.ValueOf(25)},
-		{"-num_threads", reflect.ValueOf(numberOfThreads), reflect.ValueOf(20)},
-		{"-iter", reflect.ValueOf(numberOfIterations), reflect.ValueOf(15)},
-		{"-binary", reflect.ValueOf(binaryMode), reflect.ValueOf(true)},
+		{"-train_file", reflect.ValueOf(actualParameters.trainFile), reflect.ValueOf("text10.txt")},
+		{"-output_file", reflect.ValueOf(actualParameters.outputFile), reflect.ValueOf("vectors.bin")},
+		{"-cbow", reflect.ValueOf(actualParameters.cbowMode), reflect.ValueOf(false)},
+		{"-hs", reflect.ValueOf(actualParameters.isHierarchicalSoftmaxActivated), reflect.ValueOf(true)},
+		{"-size", reflect.ValueOf(actualParameters.layer1Size), reflect.ValueOf(200)},
+		{"-window", reflect.ValueOf(actualParameters.windowSize), reflect.ValueOf(8)},
+		{"-sample", reflect.ValueOf(actualParameters.occurrenceWordsThreshold), reflect.ValueOf(1e-4)},
+		{"-negative", reflect.ValueOf(actualParameters.numberOfNegativeExamples), reflect.ValueOf(25)},
+		{"-num_threads", reflect.ValueOf(actualParameters.numberOfThreads), reflect.ValueOf(20)},
+		{"-iter", reflect.ValueOf(actualParameters.numberOfIterations), reflect.ValueOf(15)},
+		{"-binary", reflect.ValueOf(actualParameters.binaryMode), reflect.ValueOf(true)},
 	}
 
 	for _, test := range tests {

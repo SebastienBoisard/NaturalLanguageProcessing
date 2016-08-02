@@ -130,33 +130,33 @@ func TestCreateUnigramTable(t *testing.T) {
 func TestTrainModel(t *testing.T) {
 
 	// Define the parameters
-	trainFile = "text10.txt"
-	layer1Size = 20
-	windowSize = 8
-	occurrenceWordsThreshold = 0.0001
-	isHierarchicalSoftmaxActivated = false
-	numberOfNegativeExamples = 2
-	numberOfThreads = 1
-	numberOfIterations = 1
-	minWordOccurrencesThreshold = 5
-	startingLearningRate = 0.025
-	numberOfClasses = 0
-	debugMode = 2
-	binaryMode = false
-	cbowMode = true
+	parameters.trainFile = "text10.txt"
+	parameters.layer1Size = 20
+	parameters.windowSize = 8
+	parameters.isHierarchicalSoftmaxActivated = false
+	parameters.occurrenceWordsThreshold = 0.0001
+	parameters.numberOfNegativeExamples = 2
+	parameters.numberOfThreads = 1
+	parameters.numberOfIterations = 1
+	parameters.startingLearningRate = 0.025
+	parameters.minWordOccurrencesThreshold = 5
+	parameters.numberOfClasses = 0
+	parameters.debugMode = 2
+	parameters.binaryMode = false
+	parameters.cbowMode = true
 
-	if cbowMode == true {
+	if parameters.cbowMode == true {
 		learningRate = 0.05
 	}
 
 	expTable = createExpTable()
 	vocab := initializeVocab()
 
-	vocab.learnVocab(trainFile)
+	vocab.learnVocab(parameters.trainFile)
 
-	initializeNetwork(vocab.vocabSize, layer1Size)
+	initializeNetwork(vocab.vocabSize, parameters.layer1Size)
 
-	if numberOfNegativeExamples > 0 {
+	if parameters.numberOfNegativeExamples > 0 {
 		table = createUnigramTable(vocab.vocabArray)
 	}
 
@@ -170,7 +170,7 @@ func TestTrainModel(t *testing.T) {
 	}
 
 	expectedLayer1Size := 20
-	actualLayer1Size := layer1Size
+	actualLayer1Size := parameters.layer1Size
 
 	if expectedLayer1Size != actualLayer1Size {
 		t.Errorf("trainModel().layer1Size(%d) = %d", expectedLayer1Size, actualLayer1Size)
@@ -714,8 +714,8 @@ func TestTrainModel(t *testing.T) {
 
 		for valueIndex, testValue := range test.wantedValues {
 
-			if math.Abs(float64(syn0[wordIndex*layer1Size+valueIndex]-testValue)) > 0.000001 {
-				t.Errorf("trainModel().syn0[%d](%f) = %f", wordIndex*layer1Size+valueIndex, testValue, syn0[wordIndex*layer1Size+valueIndex])
+			if math.Abs(float64(syn0[wordIndex*parameters.layer1Size+valueIndex]-testValue)) > 0.000001 {
+				t.Errorf("trainModel().syn0[%d](%f) = %f", wordIndex*parameters.layer1Size+valueIndex, testValue, syn0[wordIndex*parameters.layer1Size+valueIndex])
 			}
 		}
 	}

@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+var parameters Parameters
+
 const tableSize = 1e8
 
 var table []int
@@ -151,13 +153,13 @@ func initializeNetwork(vocabSize int, layer1Size int) {
 
 	syn0 = make([]float32, vocabSize*layer1Size)
 
-	if isHierarchicalSoftmaxActivated == true {
+	if parameters.isHierarchicalSoftmaxActivated == true {
 		syn1 = make([]float32, vocabSize*layer1Size)
 	}
 
 	var nextRandom uint64 = 1
 
-	if numberOfNegativeExamples > 0 {
+	if parameters.numberOfNegativeExamples > 0 {
 
 		syn1neg = make([]float32, vocabSize*layer1Size)
 	}
@@ -183,19 +185,19 @@ func trainModelThread(id int, vocab Vocab) {
 	var sen [maxSentenceLength + 1]int
 
 	sentencePosition := 0
-	localIter := numberOfIterations
+	localIter := parameters.numberOfIterations
 
-	neu1 := make([]float32, layer1Size)
-	neu1e := make([]float32, layer1Size)
+	neu1 := make([]float32, parameters.layer1Size)
+	neu1e := make([]float32, parameters.layer1Size)
 
 	isEndFile = false
-	fi, err := os.Open(trainFile)
+	fi, err := os.Open(parameters.trainFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fi.Close()
 
-	filePosition := int64(fileSize / numberOfThreads * id)
+	filePosition := int64(fileSize / parameters.numberOfThreads * id)
 	fi.Seek(filePosition, 0)
 
 	// fmt.Println("trainModelThread[", id, "] numberOfThreads=", numberOfThreads, "filePosition=", filePosition)
@@ -220,11 +222,11 @@ func trainModelThread(id int, vocab Vocab) {
 			wordCountActual += wordCount - lastWordCount
 			lastWordCount = wordCount
 
-			fmt.Printf("%clearningRate: %f  Progress: %.2f%%\n", 13, learningRate, float32(wordCountActual)/float32(numberOfIterations*trainWords+1)*100)
-			learningRate = float32(startingLearningRate * (1 - float32(wordCountActual)/float32(numberOfIterations*trainWords+1)))
+			fmt.Printf("%clearningRate: %f  Progress: %.2f%%\n", 13, learningRate, float32(wordCountActual)/float32(parameters.numberOfIterations*trainWords+1)*100)
+			learningRate = float32(parameters.startingLearningRate * (1 - float32(wordCountActual)/float32(parameters.numberOfIterations*trainWords+1)))
 
-			if learningRate < startingLearningRate*0.0001 {
-				learningRate = startingLearningRate * 0.0001
+			if learningRate < parameters.startingLearningRate*0.0001 {
+				learningRate = parameters.startingLearningRate * 0.0001
 			}
 		}
 
@@ -259,12 +261,12 @@ func trainModelThread(id int, vocab Vocab) {
 					break
 				}
 				// The subsampling randomly discards frequent words while keeping the ranking same
-				if occurrenceWordsThreshold > 0 {
+				if parameters.occurrenceWordsThreshold > 0 {
 
 					// fmt.Println("trainModelThread[", id, "] vocab[word].frequency=", vocab[word].frequency, "occurrenceWordsThreshold=", occurrenceWordsThreshold, "trainWords=", trainWords)
 
-					ran := float32(math.Sqrt(float64(float32(vocab.vocabArray[word].frequency)/(float32(occurrenceWordsThreshold)*float32(trainWords))))+1.0) *
-						(float32(occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab.vocabArray[word].frequency)
+					ran := float32(math.Sqrt(float64(float32(vocab.vocabArray[word].frequency)/(float32(parameters.occurrenceWordsThreshold)*float32(trainWords))))+1.0) *
+						(float32(parameters.occurrenceWordsThreshold) * float32(trainWords)) / float32(vocab.vocabArray[word].frequency)
 					nextRandom = nextRandom*25214903917 + 11
 
 					// fmt.Println("trainModelThread[", id, "] ran=", ran)
@@ -288,7 +290,7 @@ func trainModelThread(id int, vocab Vocab) {
 			// }
 		}
 
-		if isEndFile == true || wordCount > trainWords/numberOfThreads {
+		if isEndFile == true || wordCount > trainWords/parameters.numberOfThreads {
 			wordCountActual += wordCount - lastWordCount
 			localIter--
 			if localIter == 0 {
@@ -308,19 +310,19 @@ func trainModelThread(id int, vocab Vocab) {
 		if word == -1 {
 			continue
 		}
-		for c := 0; c < layer1Size; c++ {
+		for c := 0; c < parameters.layer1Size; c++ {
 			neu1[c] = 0
 		}
-		for c := 0; c < layer1Size; c++ {
+		for c := 0; c < parameters.layer1Size; c++ {
 			neu1e[c] = 0
 		}
 
 		nextRandom = nextRandom*25214903917 + 11
-		b := int(nextRandom % uint64(windowSize))
+		b := int(nextRandom % uint64(parameters.windowSize))
 
 		// fmt.Println("trainModelThread[", id, "][", counter2, "] nextRandom=", nextRandom, "b=", b)
 
-		if cbowMode == true {
+		if parameters.cbowMode == true {
 			//train the cbow architecture
 
 			// fmt.Println("trainModelThread[", id, "][", counter2, "] cbowMode on")
@@ -328,9 +330,9 @@ func trainModelThread(id int, vocab Vocab) {
 			// in -> hidden
 			cw := 0
 
-			for a := int(b); a < windowSize*2+1-int(b); a++ {
-				if a != windowSize {
-					c := sentencePosition - windowSize + a
+			for a := int(b); a < parameters.windowSize*2+1-int(b); a++ {
+				if a != parameters.windowSize {
+					c := sentencePosition - parameters.windowSize + a
 					if c < 0 {
 						continue
 					}
@@ -347,8 +349,8 @@ func trainModelThread(id int, vocab Vocab) {
 					// fmt.Printf("trainModelThread[ %d ][ %d ] lastWord=%d syn0[%d]=%.20f\n", id, counter2, lastWord,
 					// idxNeu1+lastWord*layer1Size, syn0[idxNeu1+lastWord*layer1Size])
 
-					for c := 0; c < layer1Size; c++ {
-						neu1[c] += syn0[c+lastWord*layer1Size]
+					for c := 0; c < parameters.layer1Size; c++ {
+						neu1[c] += syn0[c+lastWord*parameters.layer1Size]
 						// fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 					}
 					// fmt.Printf("trainModelThread[ %d ][ %d ] 1b new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
@@ -360,21 +362,21 @@ func trainModelThread(id int, vocab Vocab) {
 
 				// fmt.Println("trainModelThread[", id, "][", counter2, "] cw > 0")
 
-				for c := 0; c < layer1Size; c++ {
+				for c := 0; c < parameters.layer1Size; c++ {
 					neu1[c] /= float32(cw)
 					// fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, c, neu1[c])
 				}
 				// fmt.Printf("trainModelThread[ %d ][ %d ] 2 new1[ %d ]= %.20f\n", id, counter2, idxNeu1, neu1[idxNeu1])
 
-				if isHierarchicalSoftmaxActivated == true {
+				if parameters.isHierarchicalSoftmaxActivated == true {
 
 					// fmt.Println("trainModelThread[", id, "][", counter2, "] isHierarchicalSoftmaxActivated")
 
 					for d := 0; d < int(vocab.vocabArray[word].codelen); d++ {
 						f := float32(0.0)
-						l2 := vocab.vocabArray[word].point[d] * layer1Size
+						l2 := vocab.vocabArray[word].point[d] * parameters.layer1Size
 						// Propagate hidden -> output
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							f += neu1[c] * syn1[c+l2]
 						}
 						if f <= -maxExp {
@@ -395,12 +397,12 @@ func trainModelThread(id int, vocab Vocab) {
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hs g=%.20f\n", id, counter2, g)
 
 						// Propagate errors output -> hidden
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							neu1e[c] += g * syn1[c+l2]
 							// fmt.Printf("trainModelThread[ %d ][ %d ] hs neu1e[ %d ]= %.20f\n", id, counter2, c, neu1e[c])
 						}
 						// Learn weights hidden -> output
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							syn1[c+l2] += g * neu1[c]
 							// fmt.Printf("trainModelThread[ %d ][ %d ] hs syn1[ %d ]= %.20f\n", id, counter2, c+l2, syn1[c+l2])
 						}
@@ -408,13 +410,13 @@ func trainModelThread(id int, vocab Vocab) {
 				}
 
 				// NEGATIVE SAMPLING
-				if numberOfNegativeExamples > 0 {
+				if parameters.numberOfNegativeExamples > 0 {
 
 					// fmt.Println("trainModelThread[", id, "][", counter2, "] numberOfNegativeExamples > 0")
 
 					var label int
 					var g float32
-					for d := 0; d < numberOfNegativeExamples+1; d++ {
+					for d := 0; d < parameters.numberOfNegativeExamples+1; d++ {
 						if d == 0 {
 							target = word
 							label = 1
@@ -430,11 +432,11 @@ func trainModelThread(id int, vocab Vocab) {
 							}
 							label = 0
 						}
-						l2 := target * layer1Size
+						l2 := target * parameters.layer1Size
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative l2=%d\n", id, counter2, l2)
 
 						f := float32(0.0)
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							f += neu1[c] * syn1neg[c+l2]
 							// fmt.Printf("trainModelThread[ %d ][ %d ] negative f[%d]=%.20f  neu1[%d]=%.20f  syn1neg[%d]=%.20f   neu1[%d]*syn1neg[%d]=%.20f\n", id, counter2, c, f, c, neu1[c], c+l2, syn1neg[c+l2], c, c+l2, neu1[c] * syn1neg[c+l2])
 						}
@@ -467,13 +469,13 @@ func trainModelThread(id int, vocab Vocab) {
 						}
 
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative neu1e[ %d ]= %.20f\n", id, counter2, 0, neu1e[0])
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							neu1e[c] += g * syn1neg[c+l2]
 							// fmt.Printf("trainModelThread[ %d ][ %d ] negative neu1e[ %d ]= %.20f\n", id, counter2, c, neu1e[c])
 						}
 
 						// fmt.Printf("trainModelThread[ %d ][ %d ] negative l2=%d g=%.20f syn1neg[ %d ]= %.20f\n", id, counter2, l2, g, l2, syn1neg[l2])
-						for c := 0; c < layer1Size; c++ {
+						for c := 0; c < parameters.layer1Size; c++ {
 							syn1neg[c+l2] += g * neu1[c]
 							// fmt.Printf("trainModelThread[ %d ][ %d ] negative syn1neg[%d]=%.20f  neu1[%d]=%.20f\n", id, counter2, c+l2, syn1neg[c+l2], c, neu1[c])
 						}
@@ -481,9 +483,9 @@ func trainModelThread(id int, vocab Vocab) {
 				}
 
 				// hidden -> in
-				for a := int(b); a < int(windowSize)*2+1-int(b); a++ {
-					if a != int(windowSize) {
-						c := sentencePosition - windowSize + a
+				for a := int(b); a < int(parameters.windowSize)*2+1-int(b); a++ {
+					if a != int(parameters.windowSize) {
+						c := sentencePosition - parameters.windowSize + a
 						// fmt.Printf("trainModelThread[ %d ][ %d ] hidden a=%d c=%d\n", id, counter2, a, c)
 						if c < 0 {
 							continue
@@ -495,8 +497,8 @@ func trainModelThread(id int, vocab Vocab) {
 						if lastWord == -1 {
 							continue
 						}
-						for c := 0; c < layer1Size; c++ {
-							syn0[c+lastWord*layer1Size] += neu1e[c]
+						for c := 0; c < parameters.layer1Size; c++ {
+							syn0[c+lastWord*parameters.layer1Size] += neu1e[c]
 						}
 					}
 				}
@@ -506,9 +508,9 @@ func trainModelThread(id int, vocab Vocab) {
 
 			// fmt.Println("trainModelThread[", id, "] skip-gram")
 
-			for a := b; a < windowSize*2+1-b; a++ {
-				if a != windowSize {
-					c := sentencePosition - windowSize + a
+			for a := b; a < parameters.windowSize*2+1-b; a++ {
+				if a != parameters.windowSize {
+					c := sentencePosition - parameters.windowSize + a
 					if c < 0 {
 						continue
 					}
@@ -519,17 +521,17 @@ func trainModelThread(id int, vocab Vocab) {
 					if lastWord == -1 {
 						continue
 					}
-					l1 := lastWord * layer1Size
-					for c := 0; c < layer1Size; c++ {
+					l1 := lastWord * parameters.layer1Size
+					for c := 0; c < parameters.layer1Size; c++ {
 						neu1e[c] = 0
 					}
 					// HIERARCHICAL SOFTMAX
-					if isHierarchicalSoftmaxActivated == true {
+					if parameters.isHierarchicalSoftmaxActivated == true {
 						for d := 0; d < int(vocab.vocabArray[word].codelen); d++ {
 							f := float32(0.0)
-							l2 := vocab.vocabArray[word].point[d] * layer1Size
+							l2 := vocab.vocabArray[word].point[d] * parameters.layer1Size
 							// Propagate hidden -> output
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								f += syn0[c+l1] * syn1[c+l2]
 							}
 
@@ -546,19 +548,19 @@ func trainModelThread(id int, vocab Vocab) {
 							// 'g' is the gradient multiplied by the learning rate
 							g := (1 - float32(vocab.vocabArray[word].code[d]) - f) * learningRate
 							// Propagate errors output -> hidden
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								neu1e[c] += g * syn1[c+l2]
 							}
 							// Learn weights hidden -> output
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								syn1[c+l2] += g * syn0[c+l1]
 							}
 						}
 					}
 
 					// NEGATIVE SAMPLING
-					if numberOfNegativeExamples > 0 {
-						for d := 0; d < numberOfNegativeExamples+1; d++ {
+					if parameters.numberOfNegativeExamples > 0 {
+						for d := 0; d < parameters.numberOfNegativeExamples+1; d++ {
 							if d == 0 {
 								target = word
 								label = 1
@@ -574,9 +576,9 @@ func trainModelThread(id int, vocab Vocab) {
 								label = 0
 							}
 							var g float32
-							l2 := target * layer1Size
+							l2 := target * parameters.layer1Size
 							f := float32(0.0)
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								f += syn0[c+l1] * syn1neg[c+l2]
 							}
 							if f > maxExp {
@@ -588,17 +590,17 @@ func trainModelThread(id int, vocab Vocab) {
 									g = float32(float32(label)-expTable[int((f+maxExp)*(expTableSize/maxExp/2))]) * learningRate
 								}
 							}
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								neu1e[c] += g * syn1neg[c+l2]
 							}
-							for c := 0; c < layer1Size; c++ {
+							for c := 0; c < parameters.layer1Size; c++ {
 								syn1neg[c+l2] += g * syn0[c+l1]
 							}
 						}
 					}
 
 					// Learn weights input -> hidden
-					for c := 0; c < layer1Size; c++ {
+					for c := 0; c < parameters.layer1Size; c++ {
 						syn0[c+l1] += neu1e[c]
 					}
 				}
@@ -628,7 +630,7 @@ func saveData(outputFileName string, vocab Vocab) {
 	}
 	defer file.Close()
 
-	if numberOfClasses == 0 {
+	if parameters.numberOfClasses == 0 {
 		saveWordsAsVectors(file, vocab, syn0)
 	} else {
 		saveWordsAsClasses(file, vocab, syn0)
@@ -637,16 +639,16 @@ func saveData(outputFileName string, vocab Vocab) {
 
 func saveWordsAsVectors(output io.Writer, vocab Vocab, syn0 []float32) {
 	// Save the word vectors
-	fmt.Fprintf(output, "%d %d\n", vocab.vocabSize, layer1Size)
+	fmt.Fprintf(output, "%d %d\n", vocab.vocabSize, parameters.layer1Size)
 	for a := 0; a < vocab.vocabSize; a++ {
 		fmt.Fprintf(output, "%s ", vocab.vocabArray[a].word)
-		if binaryMode == true {
-			for b := 0; b < layer1Size; b++ {
-				binary.Write(output, binary.LittleEndian, syn0[a*layer1Size+b])
+		if parameters.binaryMode == true {
+			for b := 0; b < parameters.layer1Size; b++ {
+				binary.Write(output, binary.LittleEndian, syn0[a*parameters.layer1Size+b])
 			}
 		} else {
-			for b := 0; b < layer1Size; b++ {
-				fmt.Fprintf(output, "%f ", syn0[a*layer1Size+b])
+			for b := 0; b < parameters.layer1Size; b++ {
+				fmt.Fprintf(output, "%f ", syn0[a*parameters.layer1Size+b])
 			}
 		}
 		fmt.Fprintf(output, "\n")
@@ -657,41 +659,41 @@ func saveWordsAsClasses(output io.Writer, vocab Vocab, syn0 []float32) {
 	// Run K-means on the word vectors
 	// int clcn = classes, iter = 10, closeid;
 
-	clcn := numberOfClasses
-	numberOfIterations = 10
+	clcn := parameters.numberOfClasses
+	numberOfIterations := 10
 	var closeid int
 
 	var closev, x float32
 	cl := make([]int, vocab.vocabSize)
-	centcn := make([]int, numberOfClasses)
-	cent := make([]float32, numberOfClasses*layer1Size)
+	centcn := make([]int, parameters.numberOfClasses)
+	cent := make([]float32, parameters.numberOfClasses*parameters.layer1Size)
 
 	for a := 0; a < vocab.vocabSize; a++ {
 		cl[a] = a % clcn
 	}
 
 	for a := 0; a < numberOfIterations; a++ {
-		for b := 0; b < clcn*layer1Size; b++ {
+		for b := 0; b < clcn*parameters.layer1Size; b++ {
 			cent[b] = 0
 		}
 		for b := 0; b < clcn; b++ {
 			centcn[b] = 1
 		}
 		for c := 0; c < vocab.vocabSize; c++ {
-			for d := 0; d < layer1Size; d++ {
-				cent[layer1Size*cl[c]+d] += syn0[c*layer1Size+d]
+			for d := 0; d < parameters.layer1Size; d++ {
+				cent[parameters.layer1Size*cl[c]+d] += syn0[c*parameters.layer1Size+d]
 			}
 			centcn[cl[c]]++
 		}
 		for b := 0; b < clcn; b++ {
 			closev = 0
-			for c := 0; c < layer1Size; c++ {
-				cent[layer1Size*b+c] = cent[layer1Size*b+c] / float32(centcn[b])
-				closev += cent[layer1Size*b+c] * cent[layer1Size*b+c]
+			for c := 0; c < parameters.layer1Size; c++ {
+				cent[parameters.layer1Size*b+c] = cent[parameters.layer1Size*b+c] / float32(centcn[b])
+				closev += cent[parameters.layer1Size*b+c] * cent[parameters.layer1Size*b+c]
 			}
 			closev = float32(math.Sqrt(float64(closev)))
-			for c := 0; c < layer1Size; c++ {
-				cent[layer1Size*b+c] /= closev
+			for c := 0; c < parameters.layer1Size; c++ {
+				cent[parameters.layer1Size*b+c] /= closev
 			}
 		}
 		for c := 0; c < vocab.vocabSize; c++ {
@@ -699,8 +701,8 @@ func saveWordsAsClasses(output io.Writer, vocab Vocab, syn0 []float32) {
 			closeid = 0
 			for d := 0; d < clcn; d++ {
 				x = 0
-				for b := 0; b < layer1Size; b++ {
-					x += cent[layer1Size*d+b] * syn0[c*layer1Size+b]
+				for b := 0; b < parameters.layer1Size; b++ {
+					x += cent[parameters.layer1Size*d+b] * syn0[c*parameters.layer1Size+b]
 				}
 				if x > closev {
 					closev = x
@@ -730,9 +732,9 @@ func main() {
 
 	// Go version: Word2Vec -train_file text10.txt -output_file vectors2.bin -cbow  -size 200 -window 8 -negative 25 -sample 1e-4 -num_threads 1 -iter 1 > a2.txt
 	// C version:  ./word2vec -train text10.txt -output vectors1.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 1 -binary 0 -iter 1 > a1.txt
-	manageParameters()
+	parameters = manageParameters()
 
-	if cbowMode == true {
+	if parameters.cbowMode == true {
 		learningRate = 0.05
 	}
 
@@ -740,17 +742,17 @@ func main() {
 
 	vocab := initializeVocab()
 
-	vocab.learnVocab(trainFile)
+	vocab.learnVocab(parameters.trainFile)
 
-	initializeNetwork(vocab.vocabSize, layer1Size)
+	initializeNetwork(vocab.vocabSize, parameters.layer1Size)
 
 	createBinaryTree(vocab.vocabArray)
 
-	if numberOfNegativeExamples > 0 {
+	if parameters.numberOfNegativeExamples > 0 {
 		table = createUnigramTable(vocab.vocabArray)
 	}
 
 	trainModel(vocab)
 
-	saveData(outputFile, vocab)
+	saveData(parameters.outputFile, vocab)
 }
